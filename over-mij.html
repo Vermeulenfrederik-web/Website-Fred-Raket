@@ -7,27 +7,46 @@
         <link rel="stylesheet" href="assets/css/main.css" />
         <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
         <style>
-            /* --- HEADER & LOGO --- */
+            /* --- HEADER & NAVIGATIE --- */
             #wrapper { padding-top: 0 !important; }
             #header { padding-top: 1.5em !important; }
             #header .inner {
                 max-width: 68em; 
                 margin: 0 auto !important;
                 padding: 0 1.5em 2em 1.5em !important; 
-                display: block !important;
                 position: relative;
             }
-            .logo { display: block !important; border-bottom: none !important; text-decoration: none !important; }
-            .logo .symbol img { width: 180px !important; height: auto !important; display: block !important; }
+            .logo .symbol img { width: 180px !important; height: auto !important; }
 
-            /* --- CONTENT --- */
-            .content-section { margin-top: 2em; max-width: 40em; }
-            .content-section h1 { font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; }
+            /* --- CONTENT STYLING --- */
+            h1 { font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; }
+            .content-text { max-width: 40em; margin-top: 2em; }
 
-            /* --- FOOTER --- */
-            #footer { background-color: #ffffff; padding: 4em 0 !important; border-top: 1px solid #eee; }
-            #footer .inner { max-width: 68em; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; }
-            .contact-link { font-size: 1.8rem; font-weight: 900; color: #000 !important; border-bottom: 5px solid #e60000; text-decoration: none; }
+            /* --- FOOTER STYLING --- */
+            #footer { padding: 4em 0 4em 0 !important; background-color: #ffffff; border-top: 1px solid #eee; }
+            #footer .inner {
+                max-width: 68em; margin: 0 auto; padding: 0 1.5em;
+                display: flex; flex-wrap: wrap; justify-content: space-between;
+            }
+            #footer section { width: 45%; }
+            #footer h2 { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 1.5em; }
+            
+            .contact-link {
+                font-size: 1.8rem; font-weight: 900; color: #000000 !important;
+                text-decoration: none; border-bottom: 5px solid #e60000; transition: color 0.3s ease;
+            }
+            .contact-link:hover { color: #e60000 !important; }
+            
+            .social-icons { list-style: none; padding: 0; display: flex; gap: 1.5em; }
+            .social-icons a { font-size: 1.5rem; color: #000000 !important; border-bottom: none !important; }
+            .social-icons a:hover { color: #e60000 !important; }
+            
+            .copyright { width: 100%; margin-top: 3em; font-size: 0.8rem; color: #999; border-top: 1px solid #eee; padding-top: 2em; }
+
+            @media screen and (max-width: 736px) {
+                #footer section { width: 100%; margin-bottom: 3em; }
+                .contact-link { font-size: 1.4rem; }
+            }
         </style>
     </head>
     <body class="is-preload">
@@ -36,7 +55,7 @@
             <header id="header">
                 <div class="inner">
                     <a href="index.html" class="logo">
-                        <span class="symbol"><img src="images/logo.png" alt="Logo" /></span>
+                        <span class="symbol"><img src="images/logo.png" alt="Fred Raket" /></span>
                     </a>
                     <nav>
                         <ul>
@@ -61,14 +80,19 @@
                     <li><a href="#">Set bouw</a></li>
                     <li><a href="maker.html">Maker</a></li>
                 </ul>
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Volg mij</h3>
+                <ul>
+                    <li><a href="https://www.youtube.com/@fredraket" target="_blank">YouTube</a></li>
+                    <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank">Instagram</a></li>
+                </ul>
             </nav>
 
             <div id="main">
                 <div class="inner">
-                    <section class="content-section">
-                        <h1>Wie is Fred Raket?</h1>
+                    <h1>Wie is Fred Raket?</h1>
+                    <div class="content-text">
                         <p>Al van jongs af aan heb ik drie passies: Dingen maken, beelden vastleggen en een fascinatie voor alles wat vliegt. Die drie passies komen terug in alles wat ik doe in elk project, elke opdracht en elke nieuwe uitdaging.</p>
-                    </section>
+                    </div>
                 </div>
             </div>
 
@@ -78,13 +102,27 @@
                         <h2>Contact</h2>
                         <a href="mailto:fred@grom.gr" class="contact-link">fred@grom.gr</a>
                     </section>
+                    <section>
+                        <h2>Volg Fred Raket</h2>
+                        <ul class="social-icons">
+                            <li><a href="https://www.youtube.com/@fredraket" target="_blank" class="icon brands fa-youtube"><span class="label">YouTube</span></a></li>
+                            <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+                            <li><a href="mailto:fred@grom.gr" class="icon solid fa-envelope"><span class="label">Email</span></a></li>
+                        </ul>
+                    </section>
+                    <div class="copyright">
+                        &copy; Fred Raket. Alle rechten voorbehouden.
+                    </div>
                 </div>
             </footer>
+
         </div>
 
         <script src="assets/js/jquery.min.js"></script>
         <script src="assets/js/browser.min.js"></script>
+        <script src="assets/js/breakpoints.min.js"></script>
         <script src="assets/js/util.js"></script>
         <script src="assets/js/main.js"></script>
+
     </body>
 </html>

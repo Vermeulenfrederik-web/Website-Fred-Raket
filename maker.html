@@ -1,0 +1,160 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Maker - Fred Raket</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link rel="stylesheet" href="assets/css/main.css" />
+        <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+        <style>
+            /* --- HEADER & LOGO --- */
+            #wrapper { padding-top: 0 !important; }
+            #header { padding-top: 1.5em !important; }
+            #header .inner {
+                max-width: 68em; 
+                margin: 0 auto !important;
+                padding: 0 1.5em 2em 1.5em !important; 
+                display: block !important;
+                position: relative;
+            }
+            .logo { display: block !important; border-bottom: none !important; text-decoration: none !important; }
+            .logo .symbol img { width: 180px !important; height: auto !important; display: block !important; }
+
+            /* --- PROJECT SECTIES --- */
+            .project-header { 
+                margin: 3em 0 2em 0; 
+                border-top: 2px solid #000; 
+                padding-top: 1em;
+            }
+            .project-header h2 { 
+                font-weight: 900; 
+                text-transform: uppercase; 
+                letter-spacing: 0.1em; 
+                font-size: 1.2rem; 
+                color: #000;
+            }
+
+            .project-block { margin-bottom: 5em; border-bottom: 1px solid #eee; padding-bottom: 3em; }
+            .project-block:last-of-type { border-bottom: none; }
+            
+            /* Drie naast elkaar zonder crop */
+            .project-images-triple { 
+                display: flex; 
+                gap: 15px; 
+                margin: 2em 0; 
+                width: 100%; 
+                align-items: flex-start;
+            }
+
+            .project-images-triple img { 
+                flex: 1;
+                width: 33.33%;
+                height: auto; 
+                object-fit: contain; 
+                border-radius: 4px; 
+                box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            }
+
+            /* --- FOOTER --- */
+            #footer { background-color: #ffffff; padding: 4em 0 !important; border-top: 1px solid #eee; }
+            #footer .inner { max-width: 68em; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; }
+            .contact-link { font-size: 1.8rem; font-weight: 900; color: #000 !important; border-bottom: 5px solid #e60000; text-decoration: none; }
+
+            @media screen and (max-width: 736px) {
+                .project-images-triple { flex-direction: column; }
+                .project-images-triple img { width: 100% !important; }
+            }
+        </style>
+    </head>
+    <body class="is-preload">
+        <div id="wrapper">
+
+            <header id="header">
+                <div class="inner">
+                    <a href="index.html" class="logo">
+                        <span class="symbol"><img src="images/logo.png" alt="Logo" /></span>
+                    </a>
+                    <nav>
+                        <ul>
+                            <li><a href="#menu">Menu</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </header>
+
+            <nav id="menu">
+                <h2>Menu</h2>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="over-mij.html">Over mij</a></li>
+                </ul>
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Projecten</h3>
+                <ul>
+                    <li><a href="fpv.html">FPV</a></li>
+                    <li><a href="Fotografie.html">Fotografie</a></li>
+                    <li><a href="geluid.html">Geluid</a></li>
+                    <li><a href="#">Reguliere drone</a></li>
+                    <li><a href="#">Set bouw</a></li>
+                    <li><a href="maker.html">Maker</a></li>
+                </ul>
+                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Volg mij</h3>
+                <ul>
+                    <li><a href="https://www.youtube.com/@fredraket" target="_blank">YouTube</a></li>
+                    <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank">Instagram</a></li>
+                </ul>
+            </nav>
+
+            <div id="main">
+                <div class="inner">
+                    <header>
+                        <h1>Maker</h1>
+                    </header>
+
+                    <div class="project-header">
+                        <h2>Projecten</h2>
+                    </div>
+
+                    <section class="project-block">
+                        <h2>Weerballon</h2>
+                        <p>Voor de zaalshow van <i>Nerdland voor Kleine Nerds</i> bouwde ik een camera-behuizing voor een weerballon-vlucht naar de stratospfeer. Het doel was om een Polaroid-foto van Hetty Helsmoortel en Lieven Scheire te filmen op de rand van de ruimte.</p>
+                        <p>Dit was een flinke technische uitdaging: de behuizing met twee GoPro's,omdat we meevlogen met de meetapparatuur van het KMI, moesten we onder de 500 gram blijven en bestand zijn tegen temperaturen van -80 graden op 34 kilometer hoogte. Dankzij extra isolatie, verwarming en aangepaste batterijen bleven beide camera's de volledige vlucht draaien.</p>
+                        <p><i>Samenwerking met: Krew Collective en Working Class Heroes.</i></p>
+                        
+                        <div class="project-images-triple">
+                            <img src="images/maker/wb1.jpg" alt="Ruimte shot" />
+                            <img src="images/maker/wb2.jpg" alt="Lancering" />
+                            <img src="images/maker/wb3.jpg" alt="Techniek" />
+                        </div>
+                    </section>
+
+                    <section class="project-block">
+                        <h2>Wireless VHS Camera voor De Volksjury</h2>
+                        <p>Voor de liveshows van De Volksjury: A Nineties Murder bouwde ik een draadloze VHS-camera in samenwerking met Krew Collective De uitdaging was om de authentieke analoge look te behouden, terwijl het signaal betrouwbaar en zonder vertraging naar de grote schermen in de zaal werd gestuurd.</p>
+                        <div class="project-images-triple">
+                            <img src="images/maker/vhs1.jpg" alt="1" />
+                       <img src="images/maker/vhs2.jpg" alt="Lancering" />
+                            <img src="images/maker/vhs3.jpg" alt="3" />
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+            <footer id="footer">
+                <div class="inner">
+                    <section>
+                        <h2>Contact</h2>
+                        <a href="mailto:fred@grom.gr" class="contact-link">fred@grom.gr</a>
+                    </section>
+                </div>
+            </footer>
+        </div>
+
+        <script src="assets/js/jquery.min.js"></script>
+        <script src="assets/js/browser.min.js"></script>
+        <script src="assets/js/breakpoints.min.js"></script>
+        <script src="assets/js/util.js"></script>
+        <script src="assets/js/main.js"></script>
+
+    </body>
+</html>

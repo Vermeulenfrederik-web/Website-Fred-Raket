@@ -1,49 +1,52 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        <title>Fred Raket - Fotografie</title>
+        <title>sofie lemaire- Fred Raket</title>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
         <link rel="stylesheet" href="assets/css/main.css" />
-        <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css" />
         <style>
-            /* --- BOVENKANT (Header Fixes) --- */
+            /* --- HEADER & NAVIGATIE --- */
             #wrapper { padding-top: 0 !important; }
             #header { padding-top: 1.5em !important; }
             #header .inner {
                 max-width: 68em; 
                 margin: 0 auto !important;
                 padding: 0 1.5em 2em 1.5em !important; 
-                display: block !important;
                 position: relative;
             }
-            .logo { display: block !important; border-bottom: none !important; text-decoration: none !important; }
-            .logo .symbol img { width: 180px !important; height: auto !important; display: block !important; margin-bottom: 1em !important; }
-            .logo .title { display: block !important; color: #000000 !important; font-size: 1.5rem !important; font-weight: 900 !important; text-transform: uppercase; line-height: 1.2 !important; letter-spacing: 0.05em; }
-            .logo .title span { display: block !important; font-size: 0.65em !important; font-weight: 400 !important; text-transform: none; color: #555555 !important; margin-top: 5px; }
-            #header nav { position: absolute !important; right: 1.5em; top: 2.5em !important; }
-
-            /* --- MIDDEN (Foto Tegels) --- */
-            .tiles article > .image:before, .tiles article > .image:after { display: none !important; }
-            .tiles article > a {
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: flex-end !important; 
-                height: 100% !important;
-                border-bottom: none !important;
-                text-decoration: none !important;
+            .logo .symbol img { width: 180px !important; height: auto !important; }
+            
+            .back-button {
+                display: inline-block;
+                font-size: 0.75rem;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #e60000 !important;
+                text-decoration: none;
+                border: 2px solid #e60000;
+                padding: 0.4em 1em;
+                margin-top: 0.5em;
+                border-radius: 4px;
+                transition: all 0.3s ease;
             }
-            .tiles article h2 {
-                margin-bottom: 2.5em !important; 
-                padding: 0 1.25em !important;
-                position: relative;
-                z-index: 10;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.6); 
-                text-transform: uppercase; 
-            }
+            .back-button:hover { background-color: #e60000; color: #fff !important; }
 
-            /* --- ONDERKANT (Footer Styling) --- */
-            #footer { padding: 4em 0 4em 0 !important; background-color: #ffffff; }
+            /* --- COMPACT FOTO GRID --- */
+            .photo-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                grid-gap: 10px;
+                margin-top: 2.5em;
+            }
+            .photo-grid a { border-bottom: none !important; overflow: hidden; display: block; }
+            .photo-grid img { width: 100%; height: 200px; object-fit: cover; display: block; transition: opacity 0.3s ease; }
+            .photo-grid img:hover { opacity: 0.8; }
+
+            /* --- FOOTER STYLING --- */
+            #footer { padding: 4em 0 4em 0 !important; background-color: #ffffff; border-top: 1px solid #eee; }
             #footer .inner {
                 max-width: 68em; margin: 0 auto; padding: 0 1.5em;
                 display: flex; flex-wrap: wrap; justify-content: space-between;
@@ -61,6 +64,7 @@
             .copyright { width: 100%; margin-top: 3em; font-size: 0.8rem; color: #999; border-top: 1px solid #eee; padding-top: 2em; }
 
             @media screen and (max-width: 736px) {
+                .photo-grid { grid-template-columns: repeat(2, 1fr); }
                 #footer section { width: 100%; margin-bottom: 3em; }
                 .contact-link { font-size: 1.4rem; }
             }
@@ -72,8 +76,8 @@
                 <div class="inner">
                     <a href="index.html" class="logo">
                         <span class="symbol"><img src="images/logo.png" alt="Fred Raket" /></span>
-                        <span class="title">Fotografie<span>Recent werk</span></span>
                     </a>
+                    <a href="Fotografie.html" class="back-button">← Terug naar Fotografie</a>
                     <nav><ul><li><a href="#menu">Menu</a></li></ul></nav>
                 </div>
             </header>
@@ -84,7 +88,6 @@
                     <li><a href="index.html">Home</a></li>
                     <li><a href="over-mij.html">Over mij</a></li>
                 </ul>
-                
                 <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Projecten</h3>
                 <ul>
                     <li><a href="fpv.html">FPV</a></li>
@@ -94,7 +97,6 @@
                     <li><a href="#">Set bouw</a></li>
                     <li><a href="maker.html">Maker</a></li>
                 </ul>
-
                 <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Volg mij</h3>
                 <ul>
                     <li><a href="https://www.youtube.com/@fredraket" target="_blank">YouTube</a></li>
@@ -104,17 +106,24 @@
 
             <div id="main">
                 <div class="inner">
-                    <section class="tiles">
-                        <article class="style1"><span class="image"><img src="images/pic07.jpg" alt="" /></span><a href="wouter-deprez.html"><h2>Wouter Deprez</h2></a></article>
-                        <article class="style2"><span class="image"><img src="images/pic08.jpg" alt="" /></span><a href="de_volksjury.html"><h2>de volksjury</h2></a></article>
-                        <article class="style3"><span class="image"><img src="images/pic09.jpg" alt="" /></span><a href="#"><h2>Nerdland Festival</h2></a></article>
-                        <article class="style4"><span class="image"><img src="images/pic10.jpg" alt="" /></span><a href="sofie lemaire.html"><h2>sofie lemaire</h2></a></article>
-                        <article class="style5"><span class="image"><img src="images/pic11.jpg" alt="" /></span><a href="Speranza_drivers.html"><h2>Speranza drivers</h2></a></article>
-                        <article class="style6"><span class="image"><img src="images/pic12.jpg" alt="" /></span><a href="#"><h2>Merol</h2></a></article>
-                        <article class="style1"><span class="image"><img src="images/pic13.jpg" alt="" /></span><a href="studio.html"><h2>studio</h2></a></article>
-                        <article class="style2"><span class="image"><img src="images/pic14.jpg" alt="" /></span><a href="globalfashion.html"><h2>globalfashion</h2></a></article>
-                        <article class="style3"><span class="image"><img src="images/pic15.jpg" alt="" /></span><a href="Industryday.html"><h2>cinezee industry day</h2></a></article>
-                    </section>
+                    <h1>sofie lemaire</h1>
+                    <p>Sofie verzint het niet<p>
+
+                    <div class="photo-grid gallery">
+                        <a href="images/sofie lemaire/sl1.jpg"><img src="images/sofie lemaire/sl1.jpg" alt="de volksjury 1" /></a>
+                        <a href="images/sofie lemaire/sl2.jpg"><img src="images/sofie lemaire/sl2.jpg" alt="de volksjury 2" /></a>
+                        <a href="images/sofie lemaire/sl3.jpg"><img src="images/sofie lemaire/sl3.jpg" alt="de volksjury 3" /></a>
+                        <a href="images/sofie lemaire/sl4.jpg"><img src="images/sofie lemaire/sl4.jpg" alt="de volksjury 6" /></a>
+                        <a href="images/sofie lemaire/sl5.jpg"><img src="images/sofie lemaire/sl5.jpg" alt="de volksjury 7" /></a>
+                        <a href="images/sofie lemaire/sl6jpg"><img src="images/sofie lemaire/sl9.jpg" alt="de volksjury 9" /></a>
+                        <a href="images/sofie lemaire/sl7.jpg"><img src="images/sofie lemaire/sl7.jpg" alt="de volksjury 11" /></a>
+                        <a href="images/sofie lemaire/sl8.jpg"><img src="images/sofie lemaire/sl8.jpg" alt="de volksjury 12" /></a>
+                        <a href="images/sofie lemaire/sl9.jpg"><img src="images/sofie lemaire/sl9.jpg" alt="de volksjury 13" /></a>
+                        <a href="images/sofie lemaire/sl110.jpg"><img src="images/sofie lemaire/sl10.jpg" alt="de volksjury 14" /></a>
+                         <a href="images/sofie lemaire/sl11.jpg"><img src="images/sofie lemaire/sl11.jpg" alt="de volksjury 13" /></a>
+                        <a href="images/sofie lemaire/sl112.jpg"><img src="images/sofie lemaire/sl12.jpg" alt="de volksjury 14" /></a>
+ 
+                    </div>
                 </div>
             </div>
 
@@ -144,5 +153,15 @@
         <script src="assets/js/breakpoints.min.js"></script>
         <script src="assets/js/util.js"></script>
         <script src="assets/js/main.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+        <script>
+            $(document).ready(function() {
+                $('.gallery').magnificPopup({
+                    delegate: 'a',
+                    type: 'image',
+                    gallery: { enabled: true, navigateByImgClick: true, preload: [0,1] }
+                });
+            });
+        </script>
     </body>
 </html>

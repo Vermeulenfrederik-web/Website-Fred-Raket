@@ -27,6 +27,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unicodedata
 import uuid
 import webbrowser
@@ -39,10 +40,12 @@ from urllib.parse import parse_qs, unquote, urlparse
 TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOL_DIR)          # de map van de website (1 niveau hoger)
 PORT = 8765
+VERSION = 3
 
-FULL_PX, FULL_Q = 2000, 82      # grote foto (lightbox)
-THUMB_PX, THUMB_Q = 700, 75     # kleine foto in het raster
+FULL_PX, FULL_Q = 2000, 0.85    # grote foto (lightbox): langste zijde, JPEG-kwaliteit
+THUMB_PX, THUMB_Q = 700, 0.8    # kleine foto in het raster
 TILE_W = 800                    # breedte van de tegelfoto (hoogte volgt bestaande tegels)
+GRID_RATIO = 1.25               # verhouding (breedte/hoogte) van een vakje in het fotoraster
 DEFAULT_TILE_RATIO = 326 / 353  # hoogte/breedte als er geen bestaande tegel is
 
 M_TILES_BEGIN = "<!-- TOOL:TEGELS-BEGIN -->"
@@ -183,13 +186,14 @@ def album_header(back_href, back_label):
 """
 
 
-def photo_item(full, thumb, alt, indent=" " * 24):
-    return f'{indent}<a href="{esc(full)}"><img src="{esc(thumb)}" alt="{esc(alt)}" loading="lazy" /></a>'
+def photo_item(full, thumb, alt, pos="", indent=" " * 24):
+    style = f' style="object-position: {esc(pos)}"' if pos else ""
+    return f'{indent}<a href="{esc(full)}"><img src="{esc(thumb)}" alt="{esc(alt)}"{style} loading="lazy" /></a>'
 
 
 def album_page(title, intro, photos, back_href="Fotografie.html", back_label="Fotografie", menu=None):
-    """photos = lijst van (groot, klein, alt)"""
-    items = "\n".join(photo_item(f, t, a) for f, t, a in photos)
+    """photos = lijst van (groot, klein, alt[, object-position])"""
+    items = "\n".join(photo_item(*p) for p in photos)
     paras = [p.strip() for p in re.split(r"\n\s*\n", intro or "") if p.strip()]
     intro_html = "".join(f"\n                    <p>{esc(p)}</p>" for p in paras)
     if paras:
@@ -283,26 +287,6 @@ def make_jpeg(src, dst, max_px, quality):
         im.save(dst, "JPEG", quality=quality, optimize=True, progressive=True)
 
 
-def make_tile_image(src, dst, ratio):
-    """Bijsnijden (midden) tot dezelfde verhouding als de bestaande tegels."""
-    os.makedirs(os.path.dirname(dst), exist_ok=True)
-    tw, th = TILE_W, int(round(TILE_W * ratio))
-    if USE_SIPS:
-        w, h = image_size(src)
-        s = max(tw / w, th / h)
-        nw, nh = max(tw, int(round(w * s))), max(th, int(round(h * s)))
-        tmp = dst + ".tmp.jpg"
-        run_sips(["-s", "format", "jpeg", "-s", "formatOptions", "82", "-z", str(nh), str(nw), src, "--out", tmp])
-        run_sips(["-c", str(th), str(tw), tmp, "--out", dst])
-        os.remove(tmp)
-        return
-    from PIL import Image, ImageOps
-    with Image.open(src) as im:
-        im = ImageOps.exif_transpose(im).convert("RGB")
-        im = ImageOps.fit(im, (tw, th), Image.LANCZOS)
-        im.save(dst, "JPEG", quality=82, optimize=True, progressive=True)
-
-
 def tile_ratio(page_rel):
     """Lees de verhouding van de eerste bestaande tegelfoto, zodat nieuwe tegels netjes passen."""
     try:
@@ -334,24 +318,34 @@ def next_photo_number(folder, prefix):
     return max(nums) + 1
 
 
-def process_photos(staged_ids, img_dir_rel, prefix, alt_base):
-    """Zet geuploade foto's om naar groot + klein. Geeft (items, fouten) terug."""
-    folder = os.path.join(REPO, img_dir_rel)
-    n = next_photo_number(folder, prefix)
-    items, errors = [], []
-    for sid in staged_ids:
-        src = staged_path(sid)
+POS_RE = re.compile(r"^\d{1,3}(\.\d+)?% \d{1,3}(\.\d+)?%$")
+
+
+def save_staged(sid, rel):
+    src = staged_path(sid)
+    with open(src, "rb") as f:
+        if f.read(2) != b"\xff\xd8":
+            raise ValueError("geen geldige JPEG ontvangen")
+    dst = os.path.join(REPO, rel)
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    shutil.copyfile(src, dst)
+
+
+def store_photos(photos, img_dir_rel, prefix, alt_base):
+    """photos = lijst van {full, thumb, pos}: al verkleind en gedraaid door de browser."""
+    n = next_photo_number(os.path.join(REPO, img_dir_rel), prefix)
+    items = []
+    for p in photos:
         name = f"{prefix}-{n:02d}.jpg"
-        full_rel = f"{img_dir_rel}/{name}"
-        thumb_rel = f"{img_dir_rel}/thumbs/{name}"
-        try:
-            make_jpeg(src, os.path.join(REPO, full_rel), FULL_PX, FULL_Q)
-            make_jpeg(os.path.join(REPO, full_rel), os.path.join(REPO, thumb_rel), THUMB_PX, THUMB_Q)
-            items.append((full_rel, thumb_rel, f"{alt_base} - foto {n}"))
-            n += 1
-        except Exception as e:  # noqa
-            errors.append(f"{STAGED_NAMES.get(sid, sid)}: {e}")
-    return items, errors
+        full_rel, thumb_rel = f"{img_dir_rel}/{name}", f"{img_dir_rel}/thumbs/{name}"
+        save_staged(p["full"], full_rel)
+        save_staged(p["thumb"], thumb_rel)
+        pos = (p.get("pos") or "").strip()
+        if not POS_RE.match(pos) or pos.replace(".0", "") == "50% 50%":
+            pos = ""
+        items.append((full_rel, thumb_rel, f"{alt_base} - foto {n}", pos))
+        n += 1
+    return items
 
 
 STAGED_NAMES = {}
@@ -389,11 +383,11 @@ def action_create(data):
     subtitle = (data.get("subtitle") or "").strip()
     intro = (data.get("intro") or "").strip()
     photos = data.get("photos") or []
-    cover = data.get("cover") or (photos[0] if photos else None)
+    tile_id = data.get("tile")
     position = data.get("position", "top")
     if not title:
         raise ValueError("Geef een titel op.")
-    if not photos:
+    if not photos or not tile_id:
         raise ValueError("Sleep minstens een foto in het vak.")
 
     slug = slugify(title)
@@ -405,13 +399,11 @@ def action_create(data):
     back_label = "Home" if where == "home" else "Fotografie"
     img_dir = f"images/{slug}"
 
-    items, errors = process_photos(photos, img_dir, slug, title)
-    if not items:
-        raise ValueError("Geen enkele foto kon verwerkt worden:\n" + "\n".join(errors))
+    items = store_photos(photos, img_dir, slug, title)
 
-    # tegelfoto
+    # tegelfoto (al bijgesneden in de browser)
     tile_rel = f"{img_dir}/tegel.jpg"
-    make_tile_image(staged_path(cover), os.path.join(REPO, tile_rel), tile_ratio(parent_rel))
+    save_staged(tile_id, tile_rel)
 
     # pagina
     write(page_rel, album_page(title, intro, items, parent_rel, back_label))
@@ -429,7 +421,7 @@ def action_create(data):
     if where == "home" and data.get("menu", True):
         add_menu_item(page_rel, title)
 
-    return {"ok": True, "page": page_rel, "count": len(items), "errors": errors}
+    return {"ok": True, "page": page_rel, "count": len(items), "errors": []}
 
 
 def add_menu_item(href, label):
@@ -452,11 +444,163 @@ def action_add(data):
     m = re.search(r"<h1>(.*?)</h1>", text, re.S)
     title = html.unescape(m.group(1).strip()) if m else page_rel
     stem = slugify(page_rel[:-5])
-    items, errors = process_photos(photos, f"images/{stem}", stem, title)
-    for full, thumb, alt in items:
-        text = insert_line(text, M_PHOTOS_END, photo_item(full, thumb, alt, indent="").strip())
+    items = store_photos(photos, f"images/{stem}", stem, title)
+    for full, thumb, alt, pos in items:
+        text = insert_line(text, M_PHOTOS_END, photo_item(full, thumb, alt, pos, indent=""))
     write(page_rel, text)
-    return {"ok": True, "page": page_rel, "count": len(items), "errors": errors}
+    return {"ok": True, "page": page_rel, "count": len(items), "errors": []}
+
+
+# ---------- bestaande albums bewerken ----------
+GRID_OPEN = '<div class="photo-grid gallery">'
+
+
+def clean_pos(pos):
+    pos = (pos or "").strip()
+    return "" if not POS_RE.match(pos) or pos.replace(".0", "") == "50% 50%" else pos
+
+
+def find_tile(page_rel):
+    pat = (r'<article class="style(\d)"><span class="image"><img src="([^"]*)" alt="" /></span>'
+           r'<a href="' + re.escape(page_rel) + r'"><h2>(.*?)</h2>(?:<p>(.*?)</p>)?</a></article>')
+    for parent in ("Fotografie.html", "index.html"):
+        if not os.path.exists(os.path.join(REPO, parent)):
+            continue
+        m = re.search(pat, read(parent))
+        if m:
+            return {"parent": parent, "style": int(m.group(1)), "img": html.unescape(m.group(2)),
+                    "title": html.unescape(m.group(3)), "subtitle": html.unescape(m.group(4) or ""),
+                    "match": m.group(0)}
+    return None
+
+
+def album_page_rel(name):
+    page_rel = os.path.basename(name or "")
+    if not page_rel.endswith(".html") or not os.path.exists(os.path.join(REPO, page_rel)):
+        raise ValueError("Album niet gevonden.")
+    text = read(page_rel)
+    if M_PHOTOS_END not in text or GRID_OPEN not in text:
+        raise ValueError("Deze pagina is geen album dat de tool kan bewerken.")
+    return page_rel, text
+
+
+def action_album_get(page):
+    page_rel, text = album_page_rel(page)
+    h1 = re.search(r"<h1>(.*?)</h1>", text, re.S)
+    g = text.find(GRID_OPEN)
+    intro_html = text[h1.end():g]
+    paras = [html.unescape(re.sub(r"<[^>]+>", "", x)).strip() for x in re.findall(r"<p>(.*?)</p>", intro_html, re.S)]
+    grid = text[g:text.find(M_PHOTOS_END)]
+    photos = []
+    for a in re.finditer(r'<a href="([^"]*)"><img ([^>]*?)/?>\s*</a>', grid):
+        attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', a.group(2)))
+        pm = re.search(r"object-position:\s*([^;\"]+)", attrs.get("style", ""))
+        photos.append({"full": html.unescape(a.group(1)), "thumb": html.unescape(attrs.get("src", "")),
+                       "pos": pm.group(1).strip() if pm else ""})
+    t = find_tile(page_rel)
+    tile = None
+    if t:
+        tile = {k: t[k] for k in ("parent", "img", "subtitle")}
+        tile["ratio"] = tile_ratio(t["parent"])
+    return {"page": page_rel, "title": html.unescape(h1.group(1).strip()),
+            "intro": "\n\n".join(x for x in paras if x), "photos": photos, "tile": tile}
+
+
+def action_album_save(d):
+    page_rel, text = album_page_rel(d.get("page"))
+    old = action_album_get(page_rel)
+    known = {(p["full"], p["thumb"]) for p in old["photos"]}
+    title = (d.get("title") or "").strip() or old["title"]
+    intro = (d.get("intro") or "").strip()
+    stem = slugify(page_rel[:-5])
+    img_dir = f"images/{stem}"
+    n = next_photo_number(os.path.join(REPO, img_dir), stem)
+
+    lines = []
+    for i, p in enumerate(d.get("photos") or [], 1):
+        if p.get("newFull"):
+            name = f"{stem}-{n:02d}.jpg"
+            full, thumb = f"{img_dir}/{name}", f"{img_dir}/thumbs/{name}"
+            save_staged(p["newFull"], full)
+            save_staged(p["newThumb"], thumb)
+            n += 1
+        else:
+            full, thumb = p.get("full"), p.get("thumb")
+            if (full, thumb) not in known:
+                raise ValueError("Onbekende foto in de lijst.")
+        lines.append(photo_item(full, thumb, f"{title} - foto {i}", clean_pos(p.get("pos"))))
+
+    # titel
+    text = re.sub(r"<h1>.*?</h1>", lambda m: f"<h1>{esc(title)}</h1>", text, count=1, flags=re.S)
+    text = re.sub(r"<title>.*?</title>", lambda m: f"<title>{esc(title)} - Fred Raket</title>", text, count=1, flags=re.S)
+    # intro
+    paras = [x.strip() for x in re.split(r"\n\s*\n", intro) if x.strip()]
+    intro_html = ""
+    if paras:
+        intro_html = '\n                    <div class="album-intro">' + "".join(
+            f"\n                        <p>{esc(x)}</p>" for x in paras) + "\n                    </div>"
+        text = re.sub(r'<meta name="description" content="[^"]*" />',
+                      lambda m: f'<meta name="description" content="{esc(paras[0][:155])}" />', text, count=1)
+    h1_end = text.find("</h1>") + len("</h1>")
+    g = text.find(GRID_OPEN)
+    text = text[:h1_end] + intro_html + "\n                    " + text[g:]
+    # foto's
+    g = text.find(GRID_OPEN) + len(GRID_OPEN)
+    mk = text.find(M_PHOTOS_END)
+    mk_line = text.rfind("\n", 0, mk) + 1
+    text = text[:g] + "\n" + "".join(l + "\n" for l in lines) + text[mk_line:]
+    write(page_rel, text)
+
+    # tegel
+    t = find_tile(page_rel)
+    if t:
+        img = t["img"]
+        if d.get("tile"):
+            img = f"{img_dir}/tegel-{int(time.time())}.jpg"   # nieuwe naam: geen oude versie uit de cache
+            save_staged(d["tile"], img)
+        sub = d.get("subtitle")
+        sub = t["subtitle"] if sub is None else sub.strip()
+        parent = read(t["parent"])
+        write(t["parent"], parent.replace(t["match"], tile(t["style"], img, page_rel, title, sub), 1))
+    # menu
+    for name in os.listdir(REPO):
+        if name.endswith(".html"):
+            tx = read(name)
+            new = re.sub(r'<li><a href="' + re.escape(page_rel) + r'">[^<]*</a></li>',
+                         lambda m: f'<li><a href="{esc(page_rel)}">{esc(title)}</a></li>', tx)
+            if new != tx:
+                write(name, new)
+    return {"ok": True, "page": page_rel, "count": len(lines)}
+
+
+def action_album_delete(d):
+    page_rel, text = album_page_rel(d.get("page"))
+    t = find_tile(page_rel)
+    if t:
+        parent = read(t["parent"])
+        write(t["parent"], re.sub(r"\n[ \t]*" + re.escape(t["match"]), "", parent, count=1))
+    for name in os.listdir(REPO):
+        if name.endswith(".html") and name != page_rel:
+            tx = read(name)
+            new = re.sub(r'\n[ \t]*<li><a href="' + re.escape(page_rel) + r'">[^<]*</a></li>', "", tx)
+            if new != tx:
+                write(name, new)
+    os.remove(os.path.join(REPO, page_rel))
+    # fotomap enkel weggooien als ALLES erin door de tool gemaakt is (nooit je originele mappen)
+    stem = slugify(page_rel[:-5])
+    folder = os.path.join(REPO, "images", stem)
+    own = re.compile(r"^(" + re.escape(stem) + r"-\d+|tegel(-\d+)?)\.jpg$")
+    removed_imgs = False
+    if os.path.isdir(folder):
+        ok = True
+        for root, dirs, files in os.walk(folder):
+            rel = os.path.relpath(root, folder)
+            if rel not in (".", "thumbs") or any(not own.match(f) and f != ".DS_Store" for f in files):
+                ok = False
+        if ok:
+            shutil.rmtree(folder)
+            removed_imgs = True
+    return {"ok": True, "page": page_rel, "images": removed_imgs}
 
 
 def git(*args):
@@ -473,9 +617,10 @@ def action_state():
         _, st = git("status", "--porcelain", "--untracked-files=all")
         changes = [l for l in st.splitlines() if l.strip()]
         _, remote = git("remote", "get-url", "origin")
-    needed = ["assets/css/main.css", "assets/js/main.js", "assets/js/jquery.min.js", "images/logo.png"]
+    needed = ["assets/css/main.css", "assets/css/fred.css", "assets/js/main.js", "assets/js/jquery.min.js", "images/logo.png"]
     missing = [n for n in needed if not os.path.exists(os.path.join(REPO, n))]
     return {
+        "version": VERSION,
         "repo": REPO,
         "missing": missing,
         "is_repo": is_repo,
@@ -483,7 +628,9 @@ def action_state():
         "remote": remote,
         "changes": changes,
         "albums": list_albums(),
-        "converter": "sips (macOS)" if USE_SIPS else "Pillow",
+        "ratios": {"fotografie": tile_ratio("Fotografie.html"), "home": tile_ratio("index.html")},
+        "settings": {"fullPx": FULL_PX, "fullQ": FULL_Q, "thumbPx": THUMB_PX, "thumbQ": THUMB_Q,
+                     "tileW": TILE_W, "gridRatio": GRID_RATIO},
     }
 
 
@@ -541,6 +688,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, f.read(), "text/html; charset=utf-8")
         if url.path == "/api/state":
             return self.send(200, action_state())
+        if url.path == "/api/album":
+            try:
+                return self.send(200, action_album_get(parse_qs(url.query).get("page", [""])[0]))
+            except Exception as e:  # noqa
+                return self.send(400, {"error": str(e)})
         if url.path.startswith("/site/"):
             rel = unquote(url.path[len("/site/"):]) or "index.html"
             full = os.path.realpath(os.path.join(REPO, rel))
@@ -560,8 +712,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         url = urlparse(self.path)
         length = int(self.headers.get("Content-Length") or 0)
+        if url.path == "/api/quit":
+            self.send(200, {"ok": True})
+            threading.Thread(target=SERVER.shutdown, daemon=True).start()
+            return
         try:
-            if url.path == "/api/upload":
+            if url.path in ("/api/upload", "/api/convert"):
                 name = parse_qs(url.query).get("name", ["foto"])[0]
                 sid = uuid.uuid4().hex
                 remaining = length
@@ -573,6 +729,12 @@ class Handler(BaseHTTPRequestHandler):
                         f.write(chunk)
                         remaining -= len(chunk)
                 STAGED_NAMES[sid] = name
+                if url.path == "/api/convert":
+                    # bv. HEIC dat Chrome niet kan openen: omzetten naar JPEG (draai-info blijft behouden)
+                    out = os.path.join(STAGING, sid + ".jpg")
+                    make_jpeg(os.path.join(STAGING, sid), out, 100000, 92)
+                    with open(out, "rb") as f:
+                        return self.send(200, f.read(), "image/jpeg")
                 return self.send(200, {"id": sid})
             data = json.loads(self.rfile.read(length) or b"{}")
             with LOCK:
@@ -580,6 +742,10 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200, action_create(data))
                 if url.path == "/api/add":
                     return self.send(200, action_add(data))
+                if url.path == "/api/album-save":
+                    return self.send(200, action_album_save(data))
+                if url.path == "/api/album-delete":
+                    return self.send(200, action_album_delete(data))
                 if url.path == "/api/publish":
                     return self.send(200, action_publish(data))
             self.send(404, {"error": "onbekend"})
@@ -590,17 +756,39 @@ class Handler(BaseHTTPRequestHandler):
 LOCK = threading.Lock()
 
 
-def main():
+SERVER = None
+
+
+def stop_old_instance():
+    """Draait er nog een (oudere) tool? Vraag die te stoppen."""
+    import urllib.request
     try:
-        server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    except OSError:
-        print(f"De tool draait al (poort {PORT}). Ik open het venster.")
-        webbrowser.open(f"http://127.0.0.1:{PORT}/")
+        urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{PORT}/api/quit", data=b"{}"), timeout=2)
+    except Exception:
+        pass
+
+
+def main():
+    global SERVER
+    server = None
+    for attempt in range(10):
+        try:
+            server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+            break
+        except OSError:
+            if attempt == 0:
+                print("Er draait nog een andere versie van de tool, die wordt gestopt...")
+                stop_old_instance()
+            time.sleep(0.5)
+    if server is None:
+        print(f"Poort {PORT} is bezet door een oude versie van de tool.")
+        print("Sluit het andere Terminal-venster van de tool en start opnieuw.")
+        input("Druk op Enter om te sluiten.")
         return
+    SERVER = server
     url = f"http://127.0.0.1:{PORT}/"
     print("Fred Raket site tool")
     print(f"  website-map : {REPO}")
-    print(f"  converter   : {'sips (macOS)' if USE_SIPS else 'Pillow'}")
     print(f"  open        : {url}")
     print("Sluit dit venster (of Ctrl+C) om te stoppen.")
     threading.Timer(0.6, lambda: webbrowser.open(url)).start()

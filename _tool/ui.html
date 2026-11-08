@@ -55,6 +55,31 @@
   ul.changes li { border-bottom: 1px solid #f0f0f0; }
   .note { font-size: 13px; color: var(--mute); }
   a.link { color: var(--red); font-weight: 700; }
+  .thumb .mv { position: absolute; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-weight: 700; cursor: pointer; line-height: 22px; padding: 0; }
+  .thumb .mv.l { left: 4px; } .thumb .mv.r { right: 4px; }
+  .thumb.dirty::before { content: "AANGEPAST"; position: absolute; top: 4px; left: 4px; background: #111; color: #fff; font-size: 10px; font-weight: 900; letter-spacing: .08em; padding: 2px 6px; border-radius: 3px; z-index: 1; }
+  .thumb .rot { position: absolute; bottom: 4px; right: 4px; font-size: 10px; color: #fff; }
+  .hint { font-size: 12px; color: var(--mute); margin-top: 8px; }
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 50; }
+  #modal[hidden] { display: none; }
+  .mbox { background: #fff; border-radius: 10px; padding: 18px; width: min(940px, 96vw); max-height: 96vh; display: flex; flex-direction: column; gap: 12px; }
+  .mhead { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .mhead b { font-weight: 900; text-transform: uppercase; letter-spacing: .06em; font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mtabs { display: inline-flex; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+  .mtabs button { border: 0; background: #fff; padding: 8px 14px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; border-right: 1px solid #ccc; }
+  .mtabs button:last-child { border-right: 0; }
+  .mtabs button.on { background: var(--ink); color: #fff; }
+  .mtabs button:disabled { color: #bbb; cursor: default; }
+  .stage { position: relative; align-self: center; overflow: hidden; background: #222; user-select: none; touch-action: none; }
+  .stage canvas { display: block; }
+  #frame { position: absolute; border: 2px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); cursor: move; }
+  #frame::after { content: ""; position: absolute; inset: 0; background:
+     linear-gradient(to right, transparent 33.1%, rgba(255,255,255,.35) 33.3%, transparent 33.5%, transparent 66.5%, rgba(255,255,255,.35) 66.7%, transparent 66.9%),
+     linear-gradient(to bottom, transparent 33.1%, rgba(255,255,255,.35) 33.3%, transparent 33.5%, transparent 66.5%, rgba(255,255,255,.35) 66.7%, transparent 66.9%); }
+  .mtools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mtools .sp { flex: 1; }
+  .mtools label { margin: 0; display: flex; align-items: center; gap: 8px; }
+  .mexplain { font-size: 13px; color: var(--mute); margin: 0; }
 </style>
 </head>
 <body>
@@ -66,6 +91,7 @@
 <nav class="tabs">
   <button data-tab="nieuw" class="on">Nieuw album / tegel</button>
   <button data-tab="toevoegen">Foto's toevoegen</button>
+  <button data-tab="bewerken">Album bewerken</button>
   <button data-tab="publiceren">Publiceren <span class="badge" id="badge" hidden>0</span></button>
 </nav>
 
@@ -74,7 +100,7 @@
   <section class="pane on" id="pane-nieuw">
     <div class="card">
       <h2>Nieuw album of tegel</h2>
-      <p class="help">Foto's worden automatisch verkleind. Klik op een foto om ze als tegelfoto te kiezen.</p>
+      <p class="help">Foto's worden automatisch verkleind en juist gedraaid. Klik op een foto om ze te bewerken.</p>
 
       <label>Waar komt de tegel?</label>
       <div class="seg">
@@ -112,6 +138,7 @@
       <div class="drop" id="drop1"><strong>Sleep foto's hierheen</strong><br>of klik om te kiezen (JPG, PNG, HEIC)</div>
       <input type="file" id="file1" multiple accept="image/*,.heic,.HEIC" hidden>
       <div class="thumbs" id="thumbs1"></div>
+      <div class="hint">Klik op een foto om ze te draaien, de uitsnede te kiezen of als tegelfoto in te stellen.</div>
 
       <div class="bar">
         <button class="go" id="create">Album aanmaken</button>
@@ -130,9 +157,41 @@
       <div class="drop" id="drop2"><strong>Sleep foto's hierheen</strong><br>of klik om te kiezen</div>
       <input type="file" id="file2" multiple accept="image/*,.heic,.HEIC" hidden>
       <div class="thumbs" id="thumbs2"></div>
+      <div class="hint">Klik op een foto om ze te draaien of de uitsnede in het album te kiezen.</div>
       <div class="bar">
         <button class="go" id="add">Foto's toevoegen</button>
         <span class="msg" id="msg2"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BEWERKEN -->
+  <section class="pane" id="pane-bewerken">
+    <div class="card">
+      <h2>Bestaand album bewerken</h2>
+      <p class="help">Pas tekst, volgorde en uitsnedes aan. Klik op een foto om de uitsnede te kiezen, ze te draaien of als nieuwe tegelfoto te gebruiken.</p>
+      <label for="ealbum">Album</label>
+      <select id="ealbum"></select>
+      <div class="msg" id="msg5" style="margin-top:10px"></div>
+      <div id="eform" hidden>
+        <div class="row">
+          <div><label for="etitle">Titel</label><input type="text" id="etitle"></div>
+          <div id="esubWrap"><label for="esub">Tekstje op de tegel <small>(optioneel)</small></label><input type="text" id="esub"></div>
+        </div>
+        <label for="eintro">Tekst bovenaan de pagina <small>(lege regel = nieuwe alinea)</small></label>
+        <textarea id="eintro"></textarea>
+        <div id="etileWrap">
+          <label>Tegelfoto <small id="eparent"></small></label>
+          <img id="etile" alt="" style="width:220px;border-radius:6px;display:block;background:#eee">
+        </div>
+        <label>Foto's <small>(pijltjes = volgorde)</small></label>
+        <div class="thumbs" id="thumbs3"></div>
+        <div class="bar">
+          <button class="go" id="esave">Wijzigingen opslaan</button>
+          <span class="msg" id="msg4"></span>
+          <span style="flex:1"></span>
+          <button class="ghost" id="edelete" style="border-color:#e60000;color:#e60000">Album verwijderen</button>
+        </div>
       </div>
     </div>
   </section>
@@ -159,6 +218,29 @@
   </section>
 </main>
 
+<div id="modal" hidden>
+  <div class="mbox">
+    <div class="mhead">
+      <b id="mtitle"></b>
+      <div class="mtabs">
+        <button data-m="grid">Uitsnede in album</button>
+        <button data-m="tile">Tegelfoto</button>
+      </div>
+    </div>
+    <p class="mexplain" id="mexplain"></p>
+    <div class="stage" id="stage"><canvas id="mcanvas"></canvas><div id="frame"></div></div>
+    <div class="mtools">
+      <button class="ghost" id="rotL">&#8634; Draai links</button>
+      <button class="ghost" id="rotR">Draai rechts &#8635;</button>
+      <label id="zoomL">Zoom <input type="range" id="zoom" min="25" max="100" value="100"></label>
+      <button class="ghost" id="reset">Midden</button>
+      <span class="sp"></span>
+      <button class="ghost" id="setCover">Gebruik als tegelfoto</button>
+      <button class="go" id="mdone">Klaar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = s => document.querySelector(s);
 let state = null;
@@ -175,13 +257,23 @@ document.querySelectorAll("input[name=where]").forEach(r => r.onchange = () => {
 });
 
 // ---------- status ----------
+async function getJSON(r) {
+  const t = await r.text();
+  try { return JSON.parse(t); }
+  catch (e) { throw new Error("Onverwacht antwoord van de tool. Draait er nog een oude versie? Sluit alle Terminal-vensters van de tool en start Site Tool.command opnieuw."); }
+}
 async function refresh() {
-  state = await (await fetch("/api/state")).json();
+  state = await getJSON(await fetch("/api/state"));
   const s = state.is_repo
     ? `map <b>${state.repo}</b> &middot; branch <b>${state.branch}</b> &middot; ${state.changes.length} wijziging(en)`
     : `map <b>${state.repo}</b> &middot; <span style="color:#e60000">geen git-repository gevonden</span>`;
   $("#status").innerHTML = s;
   const w = $("#warn");
+  if (state.version !== 3) {
+    w.hidden = false;
+    w.textContent = "Er draait nog een oude versie van de tool. Sluit alle Terminal-vensters van de tool, start Site Tool.command opnieuw en herlaad deze pagina (Cmd+Shift+R).";
+    return;
+  }
   w.hidden = !state.missing.length;
   if (state.missing.length) w.innerHTML = "Deze map is niet je volledige website: " + state.missing.map(escapeHtml).join(", ") +
     " ontbreekt. Pak de zip uit in de map van je GitHub-repo (waar je images- en assets-map al staan), niet in een aparte map.";
@@ -193,28 +285,103 @@ async function refresh() {
   const sel = $("#album"), keep = sel.value;
   sel.innerHTML = state.albums.map(a => `<option value="${a.page}">${escapeHtml(a.title)} (${a.count} foto's)</option>`).join("");
   if (keep) sel.value = keep;
+  const es = $("#ealbum"), ekeep = es.value;
+  es.innerHTML = `<option value="">- kies een album -</option>` + state.albums.map(a => `<option value="${a.page}">${escapeHtml(a.title)} (${a.page})</option>`).join("");
+  if (ekeep && state.albums.some(a => a.page === ekeep)) es.value = ekeep;
 }
 function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
+// ---------- foto's laden (in de browser: draai-info van camera/iPhone wordt correct toegepast) ----------
+const S = () => state.settings;
+const ratioTile = () => {   // breedte/hoogte van de tegel
+  const where = document.querySelector("input[name=where]:checked").value;
+  return 1 / state.ratios[where];
+};
+function loadImg(blob) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => res({ img, done: () => URL.revokeObjectURL(url) });
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("kan niet openen")); };
+    img.src = url;
+  });
+}
+async function decodeBlob(blob) {
+  try {
+    const { img, done } = await loadImg(blob);   // browsers passen de draai-info van de camera toe
+    const c = scaled(img, S().fullPx, img.naturalWidth, img.naturalHeight); done(); return c;
+  } catch (e) {}
+  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const c = scaled(bmp, S().fullPx, bmp.width, bmp.height); bmp.close && bmp.close(); return c;
+}
+async function decode(file, name) {
+  name = name || file.name;
+  try { return await decodeBlob(file); } catch (e) {}
+  // bv. HEIC in Chrome: laat de Mac het omzetten naar JPEG
+  const r = await fetch("/api/convert?name=" + encodeURIComponent(name), { method: "POST", body: file });
+  if (!r.ok) throw new Error("Kan " + name + " niet openen");
+  try { return await decodeBlob(await r.blob()); } catch (e) { throw new Error("Kan " + name + " niet openen"); }
+}
+function scaled(src, max, w, h) {
+  w = w || src.width; h = h || src.height;
+  const s = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement("canvas");
+  c.width = Math.round(w * s); c.height = Math.round(h * s);
+  const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+function rotated(src, rot) {
+  rot = ((rot % 4) + 4) % 4;
+  if (!rot) return src;
+  const c = document.createElement("canvas");
+  c.width = rot % 2 ? src.height : src.width; c.height = rot % 2 ? src.width : src.height;
+  const ctx = c.getContext("2d");
+  ctx.translate(c.width / 2, c.height / 2); ctx.rotate(rot * Math.PI / 2);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
+}
+const toBlob = (c, q) => new Promise(r => c.toBlob(r, "image/jpeg", q));
+// grootste kader met verhouding R (b/h) binnen een beeld met verhouding A, als fracties
+function fitFrame(A, R, zoom) {
+  let fw = 1, fh = 1;
+  if (A > R) fw = R / A; else fh = A / R;
+  fw *= zoom; fh *= zoom;
+  return { x: (1 - fw) / 2, y: (1 - fh) / 2, w: fw, h: fh };
+}
+function posOf(f) {   // kader -> CSS object-position
+  const px = f.w < 0.999 ? f.x / (1 - f.w) * 100 : 50, py = f.h < 0.999 ? f.y / (1 - f.h) * 100 : 50;
+  return `${px.toFixed(1)}% ${py.toFixed(1)}%`;
+}
+
 // ---------- foto-kiezers ----------
 function picker(dropId, fileId, thumbsId, withCover) {
-  const list = [];  // {file, url, id}
-  let cover = 0;
+  const list = [];   // {name, src(canvas), rot, grid, tile, preview}
+  let cover = 0, busy = 0;
   const drop = $(dropId), input = $(fileId), box = $(thumbsId);
-  const add = files => {
-    for (const f of files) {
-      if (!f.type.startsWith("image/") && !/\.heic$/i.test(f.name)) continue;
-      list.push({ file: f, url: URL.createObjectURL(f), id: null });
+  const refreshPhoto = p => {
+    const r = rotated(p.src, p.rot), A = r.width / r.height;
+    p.grid = fitFrame(A, S().gridRatio, 1);
+    p.tile = null;
+    p.preview = scaled(r, 300).toDataURL("image/jpeg", 0.8);
+  };
+  const add = async files => {
+    const todo = [...files].filter(f => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
+    busy += todo.length; render();
+    for (const f of todo) {
+      try {
+        const p = { name: f.name, src: await decode(f), rot: 0 };
+        refreshPhoto(p); list.push(p);
+      } catch (e) { alert(e.message); }
+      busy--; render();
     }
-    render();
   };
   const render = () => {
     box.innerHTML = "";
     list.forEach((p, i) => {
       const d = document.createElement("div");
       d.className = "thumb" + (withCover && i === cover ? " cover" : "");
-      d.innerHTML = `<img src="${p.url}" alt=""><div class="name">${escapeHtml(p.file.name)}</div><button class="x" title="Verwijderen">&times;</button>`;
-      d.onclick = () => { if (withCover) { cover = i; render(); } };
+      d.innerHTML = `<img src="${p.preview}" alt="" style="object-position:${posOf(p.grid)}"><div class="name">${escapeHtml(p.name)}</div><button class="x" title="Verwijderen">&times;</button>`;
+      d.onclick = () => openEditor(api, i);
       d.querySelector(".x").onclick = e => {
         e.stopPropagation(); list.splice(i, 1);
         if (cover >= list.length) cover = 0; else if (i < cover) cover--;
@@ -222,34 +389,257 @@ function picker(dropId, fileId, thumbsId, withCover) {
       };
       box.appendChild(d);
     });
+    if (busy) { const d = document.createElement("div"); d.className = "thumb"; d.innerHTML = `<div class="name" style="inset:0;display:flex;align-items:center;justify-content:center;background:#ddd;color:#555">laden... (${busy})</div>`; box.appendChild(d); }
   };
   drop.onclick = () => input.click();
   input.onchange = () => { add(input.files); input.value = ""; };
   ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => add(e.dataTransfer.files));
-  return {
-    list, render,
-    get cover() { return cover; },
+  const api = {
+    list, render, withCover, refreshPhoto, tileRatio: () => ratioTile(),
+    get busy() { return busy; },
+    get cover() { return cover; }, set cover(v) { cover = v; },
     clear() { list.splice(0); cover = 0; render(); },
+    tileFrame() {
+      const p = list[cover], r = rotated(p.src, p.rot), R = api.tileRatio();
+      if (!p.tile || Math.abs(p.tile.R - R) > 1e-6) p.tile = Object.assign(fitFrame(r.width / r.height, R, 1), { R, zoom: 1 });
+      return p.tile;
+    },
+    // alles in de juiste maat maken en uploaden
     async upload(onProgress) {
+      const up = async (blob, name) => {
+        const r = await fetch("/api/upload?name=" + encodeURIComponent(name), { method: "POST", body: blob });
+        if (!r.ok) throw new Error("Upload mislukt: " + name);
+        return (await getJSON(r)).id;
+      };
+      const out = [];
       for (let i = 0; i < list.length; i++) {
         onProgress(i + 1, list.length);
-        if (list[i].id) continue;
-        const r = await fetch("/api/upload?name=" + encodeURIComponent(list[i].file.name), { method: "POST", body: list[i].file });
-        if (!r.ok) throw new Error("Upload mislukt: " + list[i].file.name);
-        list[i].id = (await r.json()).id;
+        const p = list[i], r = rotated(p.src, p.rot);
+        const full = await up(await toBlob(r, S().fullQ), p.name);
+        const thumb = await up(await toBlob(scaled(r, S().thumbPx), S().thumbQ), p.name);
+        out.push({ full, thumb, pos: posOf(p.grid) });
       }
-      return list.map(p => p.id);
+      let tile = null;
+      if (withCover) {
+        const p = list[cover], r = rotated(p.src, p.rot), f = api.tileFrame();
+        const W = S().tileW, H = Math.round(W / f.R);
+        const c = document.createElement("canvas"); c.width = W; c.height = H;
+        const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(r, f.x * r.width, f.y * r.height, f.w * r.width, f.h * r.height, 0, 0, W, H);
+        tile = await up(await toBlob(c, 0.85), "tegel.jpg");
+      }
+      return { photos: out, tile };
     }
   };
+  return api;
 }
 const p1 = picker("#drop1", "#file1", "#thumbs1", true);
 const p2 = picker("#drop2", "#file2", "#thumbs2", false);
+document.querySelectorAll("input[name=where]").forEach(r => r.addEventListener("change", () => p1.list.forEach(p => p.tile = null)));
+
+// ---------- bewerkvenster ----------
+const ed = { pk: null, i: 0, mode: "grid", img: null, scale: 1 };
+async function openEditor(pk, i) {
+  if (pk.ensure) {
+    try { await pk.ensure(i); } catch (e) { alert(e.message); return; }
+  }
+  ed.pk = pk; ed.i = i; ed.mode = "grid";
+  $("#modal").hidden = false; drawEditor();
+}
+function curFrame() {
+  const p = ed.pk.list[ed.i];
+  return ed.mode === "tile" ? ed.pk.tileFrame() : p.grid;
+}
+function drawEditor() {
+  const pk = ed.pk, p = pk.list[ed.i], isCover = pk.withCover && pk.cover === ed.i;
+  if (ed.mode === "tile" && !isCover) ed.mode = "grid";
+  $("#mtitle").textContent = p.name;
+  document.querySelectorAll(".mtabs button").forEach(b => {
+    b.classList.toggle("on", b.dataset.m === ed.mode);
+    if (b.dataset.m === "tile") { b.disabled = !isCover; b.hidden = !pk.withCover; }
+  });
+  $("#setCover").hidden = !pk.withCover || isCover;
+  $("#zoomL").style.display = ed.mode === "tile" ? "" : "none";
+  $("#mexplain").textContent = ed.mode === "tile"
+    ? "Sleep het kader en zoom in: zo wordt de tegel op de overzichtspagina bijgesneden."
+    : "Sleep het kader naar het belangrijkste deel: zo verschijnt de foto in het raster van het album. De volledige foto blijft in de lightbox.";
+  const r = rotated(p.src, p.rot);
+  const maxW = Math.min(900, window.innerWidth * 0.92), maxH = window.innerHeight * 0.62;
+  ed.scale = Math.min(maxW / r.width, maxH / r.height, 1);
+  const cv = $("#mcanvas"); cv.width = Math.round(r.width * ed.scale); cv.height = Math.round(r.height * ed.scale);
+  cv.getContext("2d").drawImage(r, 0, 0, cv.width, cv.height);
+  $("#stage").style.width = cv.width + "px"; $("#stage").style.height = cv.height + "px";
+  if (ed.mode === "tile") $("#zoom").value = Math.round(curFrame().zoom * 100);
+  placeFrame();
+}
+function placeFrame() {
+  const f = curFrame(), cv = $("#mcanvas"), fr = $("#frame");
+  fr.style.left = f.x * cv.width + "px"; fr.style.top = f.y * cv.height + "px";
+  fr.style.width = f.w * cv.width + "px"; fr.style.height = f.h * cv.height + "px";
+}
+(() => {
+  const fr = $("#frame"); let start = null;
+  fr.addEventListener("pointerdown", e => { const f = curFrame(); start = { x: e.clientX, y: e.clientY, fx: f.x, fy: f.y }; fr.setPointerCapture(e.pointerId); });
+  fr.addEventListener("pointermove", e => {
+    if (!start) return;
+    const f = curFrame(), cv = $("#mcanvas");
+    f.x = Math.min(1 - f.w, Math.max(0, start.fx + (e.clientX - start.x) / cv.width));
+    f.y = Math.min(1 - f.h, Math.max(0, start.fy + (e.clientY - start.y) / cv.height));
+    placeFrame();
+  });
+  ["pointerup", "pointercancel"].forEach(ev => fr.addEventListener(ev, () => start = null));
+})();
+$("#zoom").oninput = () => {
+  const f = curFrame(), cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+  const p = ed.pk.list[ed.i], r = rotated(p.src, p.rot);
+  const n = fitFrame(r.width / r.height, f.R, $("#zoom").value / 100);
+  f.w = n.w; f.h = n.h; f.zoom = $("#zoom").value / 100;
+  f.x = Math.min(1 - f.w, Math.max(0, cx - f.w / 2)); f.y = Math.min(1 - f.h, Math.max(0, cy - f.h / 2));
+  placeFrame();
+};
+$("#reset").onclick = () => {
+  const p = ed.pk.list[ed.i];
+  if (ed.mode === "tile") p.tile = null; else { const r = rotated(p.src, p.rot); p.grid = fitFrame(r.width / r.height, S().gridRatio, 1); }
+  drawEditor();
+};
+const rot = d => { const p = ed.pk.list[ed.i]; p.rot = (p.rot + d + 4) % 4; ed.pk.refreshPhoto(p); drawEditor(); };
+$("#rotL").onclick = () => rot(-1); $("#rotR").onclick = () => rot(1);
+$("#setCover").onclick = () => { ed.pk.cover = ed.i; ed.pk.list[ed.i].tile = null; ed.mode = "tile"; drawEditor(); };
+document.querySelectorAll(".mtabs button").forEach(b => b.onclick = () => { ed.mode = b.dataset.m; drawEditor(); });
+const closeEditor = () => { $("#modal").hidden = true; ed.pk.render(); };
+$("#mdone").onclick = closeEditor;
+$("#modal").addEventListener("pointerdown", e => { if (e.target.id === "modal") closeEditor(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#modal").hidden) closeEditor(); });
+window.addEventListener("resize", () => { if (!$("#modal").hidden) drawEditor(); });
+
+// ---------- bestaand album bewerken ----------
+const siteUrl = p => "/site/" + p.split("/").map(encodeURIComponent).join("/");
+const p3 = {
+  list: [], withCover: false, cover: -1, page: "", ratio: 1, tileChanged: false,
+  tileRatio() { return 1 / this.ratio; },
+  refreshPhoto(p) {
+    const r = rotated(p.src, p.rot);
+    p.grid = fitFrame(r.width / r.height, S().gridRatio, 1);
+    p.tile = null; p.dirty = true;
+    p.preview = scaled(r, 300).toDataURL("image/jpeg", 0.8);
+  },
+  async ensure(i) {
+    const p = this.list[i];
+    if (p.src) return;
+    const r = await fetch(siteUrl(p.full));
+    if (!r.ok) throw new Error("Foto niet gevonden: " + p.full);
+    p.src = await decode(await r.blob(), p.full.split("/").pop());
+    const A = p.src.width / p.src.height, f = fitFrame(A, S().gridRatio, 1);
+    const m = /^([\d.]+)% ([\d.]+)%$/.exec(p.pos || "");
+    if (m) { f.x = (1 - f.w) * m[1] / 100; f.y = (1 - f.h) * m[2] / 100; }
+    p.grid = f;
+  },
+  tileFrame() {
+    const p = this.list[this.cover], r = rotated(p.src, p.rot), R = this.tileRatio();
+    if (!p.tile || Math.abs(p.tile.R - R) > 1e-6) p.tile = Object.assign(fitFrame(r.width / r.height, R, 1), { R, zoom: 1 });
+    this.tileChanged = true;
+    return p.tile;
+  },
+  render() {
+    const box = $("#thumbs3"); box.innerHTML = "";
+    this.list.forEach((p, i) => {
+      const d = document.createElement("div");
+      const changed = p.dirty || (p.grid && posOf(p.grid) !== (p.pos || "50.0% 50.0%"));
+      d.className = "thumb" + (i === this.cover ? " cover" : "") + (changed && i !== this.cover ? " dirty" : "");
+      const pos = p.grid ? posOf(p.grid) : (p.pos || "50% 50%");
+      d.innerHTML = `<img src="${p.preview || siteUrl(p.thumb)}" alt="" loading="lazy" style="object-position:${pos}">
+        <button class="x" title="Uit album halen">&times;</button>
+        <button class="mv l" title="Naar voren">&larr;</button><button class="mv r" title="Naar achteren">&rarr;</button>`;
+      d.onclick = () => openEditor(p3, i);
+      const move = (e, dir) => {
+        e.stopPropagation(); const j = i + dir;
+        if (j < 0 || j >= this.list.length) return;
+        [this.list[i], this.list[j]] = [this.list[j], this.list[i]];
+        if (this.cover === i) this.cover = j; else if (this.cover === j) this.cover = i;
+        this.render();
+      };
+      d.querySelector(".mv.l").onclick = e => move(e, -1);
+      d.querySelector(".mv.r").onclick = e => move(e, 1);
+      d.querySelector(".x").onclick = e => {
+        e.stopPropagation(); this.list.splice(i, 1);
+        if (this.cover === i) { this.cover = -1; this.tileChanged = false; } else if (i < this.cover) this.cover--;
+        this.render();
+      };
+      box.appendChild(d);
+    });
+  }
+};
+async function loadAlbum() {
+  const page = $("#ealbum").value, msg = $("#msg5");
+  say(msg, ""); say($("#msg4"), "");
+  if (!page) { $("#eform").hidden = true; return; }
+  try {
+    const a = await getJSON(await fetch("/api/album?page=" + encodeURIComponent(page)));
+    if (a.error) throw new Error(a.error);
+    Object.assign(p3, { page, list: a.photos.map(p => ({ ...p, name: p.full.split("/").pop(), rot: 0 })),
+      cover: -1, tileChanged: false, withCover: !!a.tile, ratio: a.tile ? a.tile.ratio : 1 });
+    $("#etitle").value = a.title; $("#eintro").value = a.intro;
+    $("#esubWrap").hidden = !a.tile; $("#etileWrap").hidden = !a.tile;
+    if (a.tile) {
+      $("#esub").value = a.tile.subtitle;
+      $("#etile").src = siteUrl(a.tile.img) + "?t=" + Date.now();
+      $("#eparent").textContent = "(op " + (a.tile.parent === "index.html" ? "de homepagina" : "de Fotografie-pagina") + "; kies een foto en klik 'Gebruik als tegelfoto' om ze te vervangen)";
+    }
+    $("#eform").hidden = false; p3.render();
+  } catch (e) { $("#eform").hidden = true; say(msg, e.message, "err"); }
+}
+$("#ealbum").onchange = loadAlbum;
+$("#esave").onclick = async () => {
+  const btn = $("#esave"), msg = $("#msg4");
+  btn.disabled = true;
+  try {
+    const up = async (blob, name) => {
+      const r = await fetch("/api/upload?name=" + encodeURIComponent(name), { method: "POST", body: blob });
+      if (!r.ok) throw new Error("Upload mislukt"); return (await getJSON(r)).id;
+    };
+    const photos = [];
+    for (let i = 0; i < p3.list.length; i++) {
+      const p = p3.list[i];
+      const pos = p.grid ? posOf(p.grid) : p.pos;
+      if (p.rot) {   // gedraaid: opnieuw opslaan
+        say(msg, `Gedraaide foto opslaan (${i + 1})...`);
+        const r = rotated(p.src, p.rot);
+        photos.push({ newFull: await up(await toBlob(r, S().fullQ), p.name), newThumb: await up(await toBlob(scaled(r, S().thumbPx), S().thumbQ), p.name), pos });
+      } else photos.push({ full: p.full, thumb: p.thumb, pos });
+    }
+    let tile = null;
+    if (p3.cover >= 0 && p3.tileChanged) {
+      const p = p3.list[p3.cover], r = rotated(p.src, p.rot), f = p3.tileFrame();
+      const W = S().tileW, H = Math.round(W / f.R);
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(r, f.x * r.width, f.y * r.height, f.w * r.width, f.h * r.height, 0, 0, W, H);
+      tile = await up(await toBlob(c, 0.85), "tegel.jpg");
+    }
+    say(msg, "Opslaan...");
+    const res = await post("/api/album-save", { page: p3.page, title: $("#etitle").value, intro: $("#eintro").value,
+      subtitle: p3.withCover ? $("#esub").value : null, photos, tile });
+    lastCreated = $("#etitle").value;
+    await refresh(); await loadAlbum();
+    say(msg, `Opgeslagen (${res.count} foto's). <a href="${siteUrl(res.page)}" target="_blank">Bekijk de pagina</a>`, "ok");
+  } catch (e) { say(msg, e.message, "err"); }
+  btn.disabled = false;
+};
+$("#edelete").onclick = async () => {
+  if (!p3.page || !confirm(`Album "${$("#etitle").value}" verwijderen? De pagina, de tegel en het menu-item verdwijnen.`)) return;
+  try {
+    const res = await post("/api/album-delete", { page: p3.page });
+    $("#ealbum").value = ""; $("#eform").hidden = true;
+    await refresh();
+    say($("#msg5"), `Verwijderd: ${res.page}.` + (res.images ? " De fotomap is ook verwijderd." : " Je originele fotomap is blijven staan."), "ok");
+  } catch (e) { say($("#msg4"), e.message, "err"); }
+};
 
 async function post(url, data) {
   const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-  const j = await r.json();
+  const j = await getJSON(r);
   if (!r.ok) throw new Error(j.error || "Er ging iets mis");
   return j;
 }
@@ -261,15 +651,16 @@ $("#create").onclick = async () => {
   const title = $("#title").value.trim();
   if (!title) return say(msg, "Geef eerst een titel op.", "err");
   if (!p1.list.length) return say(msg, "Sleep minstens een foto in het vak.", "err");
+  if (p1.busy) return say(msg, "Even wachten, de foto's worden nog geladen.", "err");
   btn.disabled = true;
   try {
-    const ids = await p1.upload((i, n) => say(msg, `Uploaden ${i}/${n}...`));
-    say(msg, `Bezig met verkleinen van ${ids.length} foto's...`);
+    const up = await p1.upload((i, n) => say(msg, `Verkleinen en uploaden ${i}/${n}...`));
+    say(msg, "Pagina maken...");
     const res = await post("/api/create", {
       where: document.querySelector("input[name=where]:checked").value,
       position: document.querySelector("input[name=pos]:checked").value,
       title, subtitle: $("#subtitle").value, intro: $("#intro").value,
-      menu: $("#menu").checked, photos: ids, cover: ids[p1.cover]
+      menu: $("#menu").checked, photos: up.photos, tile: up.tile
     });
     let t = `Klaar: ${res.count} foto's in <a href="/site/${res.page}" target="_blank">${res.page}</a>. Ga naar Publiceren om het online te zetten.`;
     if (res.errors.length) t += `<br><span style="color:#e60000">Niet gelukt: ${res.errors.map(escapeHtml).join("; ")}</span>`;
@@ -284,11 +675,11 @@ $("#create").onclick = async () => {
 $("#add").onclick = async () => {
   const btn = $("#add"), msg = $("#msg2");
   if (!p2.list.length) return say(msg, "Sleep minstens een foto in het vak.", "err");
+  if (p2.busy) return say(msg, "Even wachten, de foto's worden nog geladen.", "err");
   btn.disabled = true;
   try {
-    const ids = await p2.upload((i, n) => say(msg, `Uploaden ${i}/${n}...`));
-    say(msg, `Bezig met verkleinen...`);
-    const res = await post("/api/add", { page: $("#album").value, photos: ids });
+    const up = await p2.upload((i, n) => say(msg, `Verkleinen en uploaden ${i}/${n}...`));
+    const res = await post("/api/add", { page: $("#album").value, photos: up.photos });
     let t = `Klaar: ${res.count} foto's toegevoegd aan <a href="/site/${res.page}" target="_blank">${res.page}</a>.`;
     if (res.errors.length) t += `<br><span style="color:#e60000">Niet gelukt: ${res.errors.map(escapeHtml).join("; ")}</span>`;
     say(msg, t, "ok");

@@ -1,0 +1,240 @@
+/*
+   Fred Raket - eigen stijlen bovenop Phantom (main.css).
+   Alles wat vroeger los in elke pagina stond, staat nu hier:
+   een aanpassing hier geldt meteen voor de hele site.
+*/
+
+/* ================= BASIS (alle pagina's) ================= */
+#wrapper { padding-top: 0 !important; }
+#header { padding-top: 1.5em !important; }
+#header .inner {
+    max-width: 68em;
+    margin: 0 auto !important;
+    padding: 0 1.5em 2em 1.5em !important;
+    position: relative;
+}
+.logo .symbol img { width: 180px !important; height: auto !important; }
+
+#menu .menu-kop {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 2em 0 1em 1.5em;
+    color: #888;
+}
+
+/* Logo als blok (home, fotografie, fpv, maker, geluid) */
+.logo-block #header .inner { display: block !important; }
+.logo-block .logo { display: block !important; border-bottom: none !important; text-decoration: none !important; }
+.logo-block .logo .symbol img { display: block !important; }
+
+/* Pagina's met een titel onder het logo */
+.has-title .logo .symbol img { margin-bottom: 1em !important; }
+.logo .title {
+    display: block !important;
+    color: #000000 !important;
+    font-size: 1.5rem !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    line-height: 1.2 !important;
+    letter-spacing: 0.05em;
+}
+.logo .title span {
+    display: block !important;
+    font-size: 0.65em !important;
+    font-weight: 400 !important;
+    text-transform: none;
+    color: #555555 !important;
+    margin-top: 5px;
+    letter-spacing: 0;
+}
+
+/* Menuknop scrolt mee weg i.p.v. vast te staan */
+.header-static #header nav { position: absolute !important; right: 1.5em; top: 2.5em !important; }
+
+.intro-text { margin-top: 1.5em; max-width: 50em; color: #555; line-height: 1.6; font-size: 1.05rem; }
+.intro-text p:last-child { margin-bottom: 0; }
+
+/* ================= HOME: tegels met gekleurde hover ================= */
+.page-home .tiles article > .image:before { opacity: 0 !important; transition: opacity 0.3s ease !important; }
+.page-home .tiles article > .image:after { display: none !important; }
+.page-home .tiles article:hover > .image:before { opacity: 0.85 !important; }
+
+.page-home .tiles article.style1 > .image:before { background-color: #2ccbd6 !important; }
+.page-home .tiles article.style2 > .image:before { background-color: #e8db2f !important; }
+.page-home .tiles article.style3 > .image:before { background-color: #d52423 !important; }
+.page-home .tiles article.style4 > .image:before { background-color: #0808ba !important; }
+.page-home .tiles article.style5 > .image:before { background-color: #f4e023 !important; }
+.page-home .tiles article.style6 > .image:before { background-color: #2ccbd6 !important; }
+
+.page-home .tiles article > a {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    height: 100% !important;
+    padding-bottom: 3.5em !important;
+    border-bottom: none !important;
+    z-index: 10;
+}
+.page-home .tiles article h2 {
+    opacity: 1 !important;
+    font-size: 1.3em !important;
+    text-transform: uppercase;
+    font-weight: 900;
+    margin: 0 !important;
+    padding: 0 1.2em !important;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    color: #ffffff !important;
+}
+.page-home .tiles article p {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    margin: 0.4em 0 0 0 !important;
+    padding: 0 1.6em !important;
+    color: #ffffff !important;
+    text-transform: none;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+}
+.page-home .tiles article:hover p { opacity: 1; }
+
+/* ================= FOTOGRAFIE: tegels zonder kleurfilter ================= */
+.page-fotografie .tiles article > .image:before,
+.page-fotografie .tiles article > .image:after { display: none !important; }
+.page-fotografie .tiles article > a {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    height: 100% !important;
+    border-bottom: none !important;
+    text-decoration: none !important;
+}
+.page-fotografie .tiles article h2 {
+    margin-bottom: 2.5em !important;
+    padding: 0 1.25em !important;
+    position: relative;
+    z-index: 10;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+    text-transform: uppercase;
+}
+.page-fotografie .tiles article h2:has(+ p) { margin-bottom: 0.2em !important; }
+.page-fotografie .tiles article p {
+    margin: 0 0 4rem 0 !important;
+    padding: 0 1.6em !important;
+    position: relative;
+    z-index: 10;
+    color: #fff !important;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+}
+.page-fotografie .tiles article:hover p { opacity: 1; }
+
+/* ================= ALBUMPAGINA'S ================= */
+.back-button {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #e60000 !important;
+    text-decoration: none;
+    border: 2px solid #e60000 !important;
+    padding: 0.4em 1em;
+    margin-top: 0.5em;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+.back-button:hover { background-color: #e60000; color: #fff !important; }
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 10px;
+    margin-top: 2.5em;
+}
+.photo-grid a { border-bottom: none !important; overflow: hidden; display: block; background: #f2f2f2; }
+.photo-grid img { width: 100%; height: 200px; object-fit: cover; display: block; transition: opacity 0.3s ease, transform 0.4s ease; }
+.photo-grid a:hover img { opacity: 0.85; transform: scale(1.03); }
+
+/* ================= TEKSTPAGINA (over mij) ================= */
+.page-tekst h1 { font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; }
+.content-text { max-width: 40em; margin-top: 2em; }
+
+/* ================= FPV: video ================= */
+.video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    margin: 2em 0;
+    background: #000;
+    border-radius: 4px;
+}
+.video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+/* ================= PROJECTPAGINA'S (maker, geluid) ================= */
+.project-header { margin: 3em 0 2em 0; border-top: 2px solid #000; padding-top: 1em; }
+.project-header h2 { font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; font-size: 1.2rem; color: #000; }
+.project-block { margin-bottom: 5em; border-bottom: 1px solid #eee; padding-bottom: 3em; }
+.project-block:last-of-type { border-bottom: none; }
+.project-images-triple { display: flex; gap: 15px; margin: 2em 0; width: 100%; }
+.project-images-triple img { border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+/* maker: drie foto's naast elkaar zonder bijsnijden */
+.page-maker .project-images-triple { align-items: flex-start; }
+.page-maker .project-images-triple img { flex: 1; width: 33.33%; height: auto; object-fit: contain; }
+
+/* geluid: poster + twee stills */
+.page-geluid .project-images-triple { gap: 10px; align-items: stretch; }
+.page-geluid .project-images-triple img:first-child { width: auto; max-width: 30%; height: 350px; object-fit: contain; background-color: #f4f4f4; }
+.page-geluid .project-images-triple img:not(:first-child) { flex: 1; min-width: 0; height: 350px; object-fit: cover; }
+
+.instagram-link {
+    display: inline-block;
+    font-weight: 900;
+    color: #e60000 !important;
+    text-decoration: none;
+    border-bottom: 3px solid #e60000 !important;
+    padding-bottom: 2px;
+}
+
+/* ================= FOOTER (alle pagina's) ================= */
+#footer { padding: 4em 0 4em 0 !important; background-color: #ffffff; border-top: 1px solid #eee; }
+#footer .inner {
+    max-width: 68em; margin: 0 auto; padding: 0 1.5em;
+    display: flex; flex-wrap: wrap; justify-content: space-between;
+}
+#footer section { width: 45%; }
+#footer h2 { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 1.5em; }
+.contact-link {
+    font-size: 1.8rem; font-weight: 900; color: #000000 !important;
+    text-decoration: none; border-bottom: 5px solid #e60000 !important; transition: color 0.3s ease;
+}
+.contact-link:hover { color: #e60000 !important; }
+.social-icons { list-style: none; padding: 0; display: flex; gap: 1.5em; margin-top: 1em; }
+.social-icons a { font-size: 1.5rem; color: #000000 !important; border-bottom: none !important; }
+.social-icons a:hover { color: #e60000 !important; }
+.copyright { width: 100%; margin-top: 3em; font-size: 0.8rem; color: #999; border-top: 1px solid #eee; padding-top: 2em; }
+.copyright a { color: #999 !important; border-bottom-color: #ddd !important; }
+
+/* ================= MOBIEL ================= */
+@media screen and (max-width: 736px) {
+    .photo-grid { grid-template-columns: repeat(2, 1fr); }
+    .photo-grid img { height: 150px; }
+    #footer section { width: 100%; margin-bottom: 3em; }
+    .contact-link { font-size: 1.4rem; }
+    .project-images-triple { flex-direction: column; }
+    .page-maker .project-images-triple img,
+    .page-geluid .project-images-triple img:first-child,
+    .page-geluid .project-images-triple img:not(:first-child) {
+        width: 100% !important; max-width: 100% !important; height: auto !important;
+    }
+}
+
+/* Introtekst op album- en rubriekpagina's */
+.album-intro { max-width: 45em; }
+.album-intro p:last-child { margin-bottom: 0; }
+.tagline { display: block; margin-top: 0.6em; font-size: 0.8rem; font-weight: 900; letter-spacing: 0.2em; color: #e60000; text-transform: uppercase; }

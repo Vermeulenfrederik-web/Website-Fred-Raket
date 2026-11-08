@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fred Raket - Site Tool</title>
+<style>
+  :root { --red: #e60000; --ink: #111; --mute: #777; --line: #e6e6e6; --bg: #fafafa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; color: var(--ink); background: var(--bg); }
+  header { background: #fff; border-bottom: 1px solid var(--line); padding: 18px 28px; display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  header h1 span { color: var(--red); }
+  #status { color: var(--mute); font-size: 13px; }
+  #status b { color: var(--ink); }
+  nav.tabs { display: flex; gap: 4px; padding: 0 28px; background: #fff; border-bottom: 1px solid var(--line); }
+  nav.tabs button { border: 0; background: none; padding: 14px 16px; font: inherit; font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); cursor: pointer; border-bottom: 3px solid transparent; }
+  nav.tabs button.on { color: var(--ink); border-bottom-color: var(--red); }
+  nav.tabs .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px; }
+  section.pane { display: none; } section.pane.on { display: block; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { margin: 0 0 4px; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+  .card p.help { margin: 0 0 18px; color: var(--mute); font-size: 13px; }
+  label { display: block; font-weight: 700; font-size: 13px; margin: 14px 0 6px; }
+  label small { font-weight: 400; color: var(--mute); }
+  input[type=text], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font: inherit; background: #fff; }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--red); outline-offset: -1px; border-color: var(--red); }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; } .row > * { flex: 1; min-width: 220px; }
+  .seg { display: inline-flex; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+  .seg label { margin: 0; padding: 8px 14px; font-weight: 600; cursor: pointer; border-right: 1px solid #ccc; }
+  .seg label:last-child { border-right: 0; }
+  .seg input { display: none; }
+  .seg input:checked + span { color: var(--red); }
+  .drop { margin-top: 16px; border: 2px dashed #bbb; border-radius: 8px; padding: 34px 20px; text-align: center; color: var(--mute); cursor: pointer; transition: .15s; background: #fcfcfc; }
+  .drop.over { border-color: var(--red); color: var(--red); background: #fff5f5; }
+  .drop strong { color: var(--ink); }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 14px; }
+  .thumb { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: #eee; cursor: pointer; outline: 3px solid transparent; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .name { position: absolute; inset: auto 0 0 0; padding: 18px 6px 4px; font-size: 10px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.6)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .thumb .x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-weight: 700; cursor: pointer; line-height: 22px; padding: 0; }
+  .thumb.cover { outline-color: var(--red); }
+  .thumb.cover::after { content: "TEGEL"; position: absolute; top: 4px; left: 4px; background: var(--red); color: #fff; font-size: 10px; font-weight: 900; letter-spacing: .08em; padding: 2px 6px; border-radius: 3px; }
+  .bar { display: flex; align-items: center; gap: 14px; margin-top: 20px; flex-wrap: wrap; }
+  button.go { background: var(--red); color: #fff; border: 0; border-radius: 6px; padding: 12px 22px; font: inherit; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; font-size: 13px; cursor: pointer; }
+  button.go:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: #fff; color: var(--ink); border: 2px solid var(--ink); border-radius: 6px; padding: 10px 18px; font: inherit; font-weight: 800; font-size: 13px; cursor: pointer; text-transform: uppercase; letter-spacing: .06em; }
+  .msg { font-size: 14px; }
+  .msg.ok { color: #0a7a2f; } .msg.err { color: var(--red); white-space: pre-wrap; }
+  .msg a { color: inherit; font-weight: 700; }
+  pre.log { background: #111; color: #ddd; padding: 14px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; max-height: 340px; overflow: auto; }
+  ul.changes { margin: 8px 0 0; padding: 0; list-style: none; font: 12px/1.7 ui-monospace, Menlo, monospace; max-height: 220px; overflow: auto; }
+  ul.changes li { border-bottom: 1px solid #f0f0f0; }
+  .note { font-size: 13px; color: var(--mute); }
+  a.link { color: var(--red); font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fred Raket <span>/</span> Site Tool</h1>
+  <div id="status">laden...</div>
+</header>
+<div id="warn" hidden style="background:#e60000;color:#fff;padding:14px 28px;font-weight:700"></div>
+<nav class="tabs">
+  <button data-tab="nieuw" class="on">Nieuw album / tegel</button>
+  <button data-tab="toevoegen">Foto's toevoegen</button>
+  <button data-tab="publiceren">Publiceren <span class="badge" id="badge" hidden>0</span></button>
+</nav>
+
+<main>
+  <!-- NIEUW -->
+  <section class="pane on" id="pane-nieuw">
+    <div class="card">
+      <h2>Nieuw album of tegel</h2>
+      <p class="help">Foto's worden automatisch verkleind. Klik op een foto om ze als tegelfoto te kiezen.</p>
+
+      <label>Waar komt de tegel?</label>
+      <div class="seg">
+        <label><input type="radio" name="where" value="fotografie" checked><span>Fotografie-pagina</span></label>
+        <label><input type="radio" name="where" value="home"><span>Homepagina (nieuwe rubriek)</span></label>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="title">Titel</label>
+          <input type="text" id="title" placeholder="bv. Nerdland Festival 2026">
+        </div>
+        <div>
+          <label for="subtitle">Tekstje op de tegel <small>(optioneel, verschijnt bij hover)</small></label>
+          <input type="text" id="subtitle" placeholder="bv. Festivalfotografie">
+        </div>
+      </div>
+      <label for="intro">Tekst bovenaan de pagina <small>(optioneel, lege regel = nieuwe alinea)</small></label>
+      <textarea id="intro" placeholder="Een paar zinnen over het project, de klant, de locatie..."></textarea>
+
+      <div class="row">
+        <div>
+          <label>Plaats van de tegel</label>
+          <div class="seg">
+            <label><input type="radio" name="pos" value="top" checked><span>Bovenaan (nieuwste eerst)</span></label>
+            <label><input type="radio" name="pos" value="bottom"><span>Onderaan</span></label>
+          </div>
+        </div>
+        <div id="menuOpt" hidden>
+          <label>Menu</label>
+          <label style="font-weight:600"><input type="checkbox" id="menu" checked> Ook toevoegen aan het menu (Projecten)</label>
+        </div>
+      </div>
+
+      <div class="drop" id="drop1"><strong>Sleep foto's hierheen</strong><br>of klik om te kiezen (JPG, PNG, HEIC)</div>
+      <input type="file" id="file1" multiple accept="image/*,.heic,.HEIC" hidden>
+      <div class="thumbs" id="thumbs1"></div>
+
+      <div class="bar">
+        <button class="go" id="create">Album aanmaken</button>
+        <span class="msg" id="msg1"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOEVOEGEN -->
+  <section class="pane" id="pane-toevoegen">
+    <div class="card">
+      <h2>Foto's toevoegen aan bestaand album</h2>
+      <p class="help">De nieuwe foto's komen achteraan in het album.</p>
+      <label for="album">Album</label>
+      <select id="album"></select>
+      <div class="drop" id="drop2"><strong>Sleep foto's hierheen</strong><br>of klik om te kiezen</div>
+      <input type="file" id="file2" multiple accept="image/*,.heic,.HEIC" hidden>
+      <div class="thumbs" id="thumbs2"></div>
+      <div class="bar">
+        <button class="go" id="add">Foto's toevoegen</button>
+        <span class="msg" id="msg2"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PUBLICEREN -->
+  <section class="pane" id="pane-publiceren">
+    <div class="card">
+      <h2>Bekijken en publiceren</h2>
+      <p class="help">Bekijk eerst lokaal of alles goed staat. Publiceren stuurt de wijzigingen naar GitHub; de site staat dan binnen een minuut online.</p>
+      <div class="bar" style="margin-top:0">
+        <button class="ghost" onclick="window.open('/site/index.html','_blank')">Bekijk site lokaal</button>
+        <button class="ghost" onclick="window.open('/site/Fotografie.html','_blank')">Bekijk Fotografie</button>
+      </div>
+      <label>Gewijzigde bestanden</label>
+      <ul class="changes" id="changes"></ul>
+      <label for="cmsg">Omschrijving van de wijziging</label>
+      <input type="text" id="cmsg" placeholder="bv. Album Nerdland 2026 toegevoegd">
+      <div class="bar">
+        <button class="go" id="publish">Publiceer naar GitHub</button>
+        <span class="msg" id="msg3"></span>
+      </div>
+      <pre class="log" id="log" hidden></pre>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+let state = null;
+let lastCreated = "";
+
+// ---------- tabs ----------
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === "pane-" + b.dataset.tab));
+  refresh();
+});
+document.querySelectorAll("input[name=where]").forEach(r => r.onchange = () => {
+  $("#menuOpt").hidden = r.value !== "home" || !r.checked;
+});
+
+// ---------- status ----------
+async function refresh() {
+  state = await (await fetch("/api/state")).json();
+  const s = state.is_repo
+    ? `map <b>${state.repo}</b> &middot; branch <b>${state.branch}</b> &middot; ${state.changes.length} wijziging(en)`
+    : `map <b>${state.repo}</b> &middot; <span style="color:#e60000">geen git-repository gevonden</span>`;
+  $("#status").innerHTML = s;
+  const w = $("#warn");
+  w.hidden = !state.missing.length;
+  if (state.missing.length) w.innerHTML = "Deze map is niet je volledige website: " + state.missing.map(escapeHtml).join(", ") +
+    " ontbreekt. Pak de zip uit in de map van je GitHub-repo (waar je images- en assets-map al staan), niet in een aparte map.";
+  const badge = $("#badge");
+  badge.hidden = !state.changes.length; badge.textContent = state.changes.length;
+  $("#changes").innerHTML = state.changes.length
+    ? state.changes.map(c => `<li>${escapeHtml(c)}</li>`).join("")
+    : "<li class='note'>Geen wijzigingen.</li>";
+  const sel = $("#album"), keep = sel.value;
+  sel.innerHTML = state.albums.map(a => `<option value="${a.page}">${escapeHtml(a.title)} (${a.count} foto's)</option>`).join("");
+  if (keep) sel.value = keep;
+}
+function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// ---------- foto-kiezers ----------
+function picker(dropId, fileId, thumbsId, withCover) {
+  const list = [];  // {file, url, id}
+  let cover = 0;
+  const drop = $(dropId), input = $(fileId), box = $(thumbsId);
+  const add = files => {
+    for (const f of files) {
+      if (!f.type.startsWith("image/") && !/\.heic$/i.test(f.name)) continue;
+      list.push({ file: f, url: URL.createObjectURL(f), id: null });
+    }
+    render();
+  };
+  const render = () => {
+    box.innerHTML = "";
+    list.forEach((p, i) => {
+      const d = document.createElement("div");
+      d.className = "thumb" + (withCover && i === cover ? " cover" : "");
+      d.innerHTML = `<img src="${p.url}" alt=""><div class="name">${escapeHtml(p.file.name)}</div><button class="x" title="Verwijderen">&times;</button>`;
+      d.onclick = () => { if (withCover) { cover = i; render(); } };
+      d.querySelector(".x").onclick = e => {
+        e.stopPropagation(); list.splice(i, 1);
+        if (cover >= list.length) cover = 0; else if (i < cover) cover--;
+        render();
+      };
+      box.appendChild(d);
+    });
+  };
+  drop.onclick = () => input.click();
+  input.onchange = () => { add(input.files); input.value = ""; };
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => add(e.dataTransfer.files));
+  return {
+    list, render,
+    get cover() { return cover; },
+    clear() { list.splice(0); cover = 0; render(); },
+    async upload(onProgress) {
+      for (let i = 0; i < list.length; i++) {
+        onProgress(i + 1, list.length);
+        if (list[i].id) continue;
+        const r = await fetch("/api/upload?name=" + encodeURIComponent(list[i].file.name), { method: "POST", body: list[i].file });
+        if (!r.ok) throw new Error("Upload mislukt: " + list[i].file.name);
+        list[i].id = (await r.json()).id;
+      }
+      return list.map(p => p.id);
+    }
+  };
+}
+const p1 = picker("#drop1", "#file1", "#thumbs1", true);
+const p2 = picker("#drop2", "#file2", "#thumbs2", false);
+
+async function post(url, data) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || "Er ging iets mis");
+  return j;
+}
+function say(el, text, cls) { el.className = "msg " + (cls || ""); el.innerHTML = text; }
+
+// ---------- nieuw album ----------
+$("#create").onclick = async () => {
+  const btn = $("#create"), msg = $("#msg1");
+  const title = $("#title").value.trim();
+  if (!title) return say(msg, "Geef eerst een titel op.", "err");
+  if (!p1.list.length) return say(msg, "Sleep minstens een foto in het vak.", "err");
+  btn.disabled = true;
+  try {
+    const ids = await p1.upload((i, n) => say(msg, `Uploaden ${i}/${n}...`));
+    say(msg, `Bezig met verkleinen van ${ids.length} foto's...`);
+    const res = await post("/api/create", {
+      where: document.querySelector("input[name=where]:checked").value,
+      position: document.querySelector("input[name=pos]:checked").value,
+      title, subtitle: $("#subtitle").value, intro: $("#intro").value,
+      menu: $("#menu").checked, photos: ids, cover: ids[p1.cover]
+    });
+    let t = `Klaar: ${res.count} foto's in <a href="/site/${res.page}" target="_blank">${res.page}</a>. Ga naar Publiceren om het online te zetten.`;
+    if (res.errors.length) t += `<br><span style="color:#e60000">Niet gelukt: ${res.errors.map(escapeHtml).join("; ")}</span>`;
+    say(msg, t, "ok");
+    lastCreated = title;
+    p1.clear(); $("#title").value = $("#subtitle").value = $("#intro").value = "";
+  } catch (e) { say(msg, e.message, "err"); }
+  btn.disabled = false; refresh();
+};
+
+// ---------- foto's toevoegen ----------
+$("#add").onclick = async () => {
+  const btn = $("#add"), msg = $("#msg2");
+  if (!p2.list.length) return say(msg, "Sleep minstens een foto in het vak.", "err");
+  btn.disabled = true;
+  try {
+    const ids = await p2.upload((i, n) => say(msg, `Uploaden ${i}/${n}...`));
+    say(msg, `Bezig met verkleinen...`);
+    const res = await post("/api/add", { page: $("#album").value, photos: ids });
+    let t = `Klaar: ${res.count} foto's toegevoegd aan <a href="/site/${res.page}" target="_blank">${res.page}</a>.`;
+    if (res.errors.length) t += `<br><span style="color:#e60000">Niet gelukt: ${res.errors.map(escapeHtml).join("; ")}</span>`;
+    say(msg, t, "ok");
+    lastCreated = $("#album").selectedOptions[0].textContent.replace(/ \(\d+ foto's\)$/, "");
+    p2.clear();
+  } catch (e) { say(msg, e.message, "err"); }
+  btn.disabled = false; refresh();
+};
+
+// ---------- publiceren ----------
+$("#publish").onclick = async () => {
+  const btn = $("#publish"), msg = $("#msg3"), log = $("#log");
+  btn.disabled = true; say(msg, "Bezig met publiceren...");
+  try {
+    const res = await post("/api/publish", { message: $("#cmsg").value || (lastCreated ? `Update: ${lastCreated}` : "Site bijgewerkt") });
+    log.hidden = false; log.textContent = res.log;
+    say(msg, res.ok ? "Gepubliceerd." : "Niet gelukt, zie het verslag hieronder.", res.ok ? "ok" : "err");
+    if (res.ok) $("#cmsg").value = "";
+  } catch (e) { say(msg, e.message, "err"); }
+  btn.disabled = false; refresh();
+};
+
+refresh();
+</script>
+</body>
+</html>

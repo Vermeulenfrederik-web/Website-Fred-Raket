@@ -1,55 +1,15 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="nl">
     <head>
         <title>Over mij - Fred Raket</title>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Wie is Fred Raket? Maker, beeldmaker en drone-piloot." />
         <link rel="stylesheet" href="assets/css/main.css" />
         <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-        <style>
-            /* --- HEADER & NAVIGATIE --- */
-            #wrapper { padding-top: 0 !important; }
-            #header { padding-top: 1.5em !important; }
-            #header .inner {
-                max-width: 68em; 
-                margin: 0 auto !important;
-                padding: 0 1.5em 2em 1.5em !important; 
-                position: relative;
-            }
-            .logo .symbol img { width: 180px !important; height: auto !important; }
-
-            /* --- CONTENT STYLING --- */
-            h1 { font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; }
-            .content-text { max-width: 40em; margin-top: 2em; }
-
-            /* --- FOOTER STYLING --- */
-            #footer { padding: 4em 0 4em 0 !important; background-color: #ffffff; border-top: 1px solid #eee; }
-            #footer .inner {
-                max-width: 68em; margin: 0 auto; padding: 0 1.5em;
-                display: flex; flex-wrap: wrap; justify-content: space-between;
-            }
-            #footer section { width: 45%; }
-            #footer h2 { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 1.5em; }
-            
-            .contact-link {
-                font-size: 1.8rem; font-weight: 900; color: #000000 !important;
-                text-decoration: none; border-bottom: 5px solid #e60000; transition: color 0.3s ease;
-            }
-            .contact-link:hover { color: #e60000 !important; }
-            
-            .social-icons { list-style: none; padding: 0; display: flex; gap: 1.5em; }
-            .social-icons a { font-size: 1.5rem; color: #000000 !important; border-bottom: none !important; }
-            .social-icons a:hover { color: #e60000 !important; }
-            
-            .copyright { width: 100%; margin-top: 3em; font-size: 0.8rem; color: #999; border-top: 1px solid #eee; padding-top: 2em; }
-
-            @media screen and (max-width: 736px) {
-                #footer section { width: 100%; margin-bottom: 3em; }
-                .contact-link { font-size: 1.4rem; }
-            }
-        </style>
+        <link rel="stylesheet" href="assets/css/fred.css" />
     </head>
-    <body class="is-preload">
+    <body class="is-preload page-tekst">
         <div id="wrapper">
 
             <header id="header">
@@ -57,11 +17,7 @@
                     <a href="index.html" class="logo">
                         <span class="symbol"><img src="images/logo.png" alt="Fred Raket" /></span>
                     </a>
-                    <nav>
-                        <ul>
-                            <li><a href="#menu">Menu</a></li>
-                        </ul>
-                    </nav>
+                    <nav><ul><li><a href="#menu">Menu</a></li></ul></nav>
                 </div>
             </header>
 
@@ -71,19 +27,20 @@
                     <li><a href="index.html">Home</a></li>
                     <li><a href="over-mij.html">Over mij</a></li>
                 </ul>
-                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Projecten</h3>
+                <h3 class="menu-kop">Projecten</h3>
                 <ul>
                     <li><a href="fpv.html">FPV</a></li>
                     <li><a href="Fotografie.html">Fotografie</a></li>
                     <li><a href="geluid.html">Geluid</a></li>
-                    <li><a href="#">Reguliere drone</a></li>
-                    <li><a href="#">Set bouw</a></li>
+                    <li><a href="drone.html">Reguliere drone</a></li>
+                    <li><a href="set-bouw.html">Set bouw</a></li>
                     <li><a href="maker.html">Maker</a></li>
+                    <!-- TOOL:MENU-EINDE -->
                 </ul>
-                <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 2em 0 1em 1.5em; color: #888;">Volg mij</h3>
+                <h3 class="menu-kop">Volg mij</h3>
                 <ul>
-                    <li><a href="https://www.youtube.com/@fredraket" target="_blank">YouTube</a></li>
-                    <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank">Instagram</a></li>
+                    <li><a href="https://www.youtube.com/@fredraket" target="_blank" rel="noopener">YouTube</a></li>
+                    <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank" rel="noopener">Instagram</a></li>
                 </ul>
             </nav>
 
@@ -91,7 +48,7 @@
                 <div class="inner">
                     <h1>Wie is Fred Raket?</h1>
                     <div class="content-text">
-                        <p>Al van jongs af aan heb ik drie passies: Dingen maken, beelden vastleggen en een fascinatie voor alles wat vliegt. Die drie passies komen terug in alles wat ik doe in elk project, elke opdracht en elke nieuwe uitdaging.</p>
+                        <p>Al van jongs af aan heb ik drie passies: dingen maken, beelden vastleggen en een fascinatie voor alles wat vliegt. Die drie passies komen terug in alles wat ik doe: in elk project, elke opdracht en elke nieuwe uitdaging.</p>
                     </div>
                 </div>
             </div>
@@ -105,17 +62,17 @@
                     <section>
                         <h2>Volg Fred Raket</h2>
                         <ul class="social-icons">
-                            <li><a href="https://www.youtube.com/@fredraket" target="_blank" class="icon brands fa-youtube"><span class="label">YouTube</span></a></li>
-                            <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
-                            <li><a href="mailto:fred@grom.gr" class="icon solid fa-envelope"><span class="label">Email</span></a></li>
+                            <li><a href="https://www.youtube.com/@fredraket" target="_blank" rel="noopener" class="icon brands fa-youtube"><span class="label">YouTube</span></a></li>
+                            <li><a href="https://www.instagram.com/fred.raket.fpv/" target="_blank" rel="noopener" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+                            <li><a href="mailto:fred@grom.gr" class="icon solid fa-envelope"><span class="label">E-mail</span></a></li>
                         </ul>
                     </section>
                     <div class="copyright">
-                        &copy; Fred Raket. Alle rechten voorbehouden.
+                        &copy; Fred Raket. Alle rechten voorbehouden. Alle foto's, video's en teksten op deze site zijn eigendom van Fred Raket en mogen niet zonder schriftelijke toestemming gebruikt worden.<br />
+                        Design: <a href="https://html5up.net" target="_blank" rel="noopener">HTML5 UP</a>
                     </div>
                 </div>
             </footer>
-
         </div>
 
         <script src="assets/js/jquery.min.js"></script>
@@ -123,6 +80,5 @@
         <script src="assets/js/breakpoints.min.js"></script>
         <script src="assets/js/util.js"></script>
         <script src="assets/js/main.js"></script>
-
     </body>
 </html>

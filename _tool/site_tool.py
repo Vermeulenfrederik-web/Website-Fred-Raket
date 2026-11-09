@@ -40,12 +40,13 @@ from urllib.parse import parse_qs, unquote, urlparse
 TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOL_DIR)          # de map van de website (1 niveau hoger)
 PORT = 8765
-VERSION = 4
+VERSION = 6
 
 FULL_PX, FULL_Q = 2000, 0.85    # grote foto (lightbox): langste zijde, JPEG-kwaliteit
 THUMB_PX, THUMB_Q = 700, 0.8    # kleine foto in het raster
 TILE_W = 800                    # breedte van de tegelfoto (hoogte volgt bestaande tegels)
 GRID_RATIO = 1.25               # verhouding (breedte/hoogte) van een vakje in het fotoraster
+WATERMARK = "Fred Raket"        # klein watermerk linksonder op de grote foto's ("" = geen watermerk)
 DEFAULT_TILE_RATIO = 326 / 353  # hoogte/breedte als er geen bestaande tegel is
 
 M_TILES_BEGIN = "<!-- TOOL:TEGELS-BEGIN -->"
@@ -678,7 +679,7 @@ def action_state():
         "albums": list_albums(),
         "ratios": {"fotografie": tile_ratio("Fotografie.html"), "home": tile_ratio("index.html")},
         "settings": {"fullPx": FULL_PX, "fullQ": FULL_Q, "thumbPx": THUMB_PX, "thumbQ": THUMB_Q,
-                     "tileW": TILE_W, "gridRatio": GRID_RATIO},
+                     "tileW": TILE_W, "gridRatio": GRID_RATIO, "watermark": WATERMARK},
     }
 
 

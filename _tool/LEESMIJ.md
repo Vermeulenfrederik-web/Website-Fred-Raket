@@ -24,6 +24,7 @@
 - verwerkt in de browser, dus staande foto's blijven rechtop en GPS-gegevens worden verwijderd
 - groot: max. 2000 px, JPEG kwaliteit 85 (voor de lightbox)
 - klein: max. 700 px (voor het raster, laadt veel sneller)
+- watermerk: klein "Fred Raket" linksonder op de grote foto (aanpassen of uitzetten met WATERMARK bovenaan in site_tool.py)
 - tegelfoto: bijgesneden (zoals jij kiest) tot dezelfde verhouding als je bestaande tegels
 - Instellingen staan bovenaan in `site_tool.py`.
 

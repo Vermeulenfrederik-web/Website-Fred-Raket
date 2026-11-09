@@ -89,6 +89,14 @@
   .mtools .sp { flex: 1; }
   .mtools label { margin: 0; display: flex; align-items: center; gap: 8px; }
   .mexplain { font-size: 13px; color: var(--mute); margin: 0; }
+  #prog { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 60; }
+  #prog[hidden] { display: none; }
+  #prog .pbox { background: #fff; border-radius: 10px; padding: 26px 28px; width: min(460px, 92vw); }
+  #prog h3 { margin: 0 0 4px; font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+  #prog .ptext { color: var(--mute); font-size: 13px; min-height: 18px; margin-bottom: 14px; }
+  #prog .pbar { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+  #prog .pbar div { height: 100%; width: 0; background: var(--red); transition: width .2s; }
+  #prog .pnum { display: flex; justify-content: space-between; font-size: 12px; color: var(--mute); margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -245,6 +253,15 @@
   </section>
 </main>
 
+<div id="prog" hidden>
+  <div class="pbox">
+    <h3 id="ptitle">Bezig</h3>
+    <div class="ptext" id="ptext"></div>
+    <div class="pbar"><div id="pbar"></div></div>
+    <div class="pnum"><span id="pcount"></span><span id="peta"></span></div>
+  </div>
+</div>
+
 <div id="modal" hidden>
   <div class="mbox">
     <div class="mhead">
@@ -296,7 +313,7 @@ async function refresh() {
     : `map <b>${state.repo}</b> &middot; <span style="color:#e60000">geen git-repository gevonden</span>`;
   $("#status").innerHTML = s;
   const w = $("#warn");
-  if (state.version !== 4) {
+  if (state.version !== 6) {
     w.hidden = false;
     w.textContent = "Er draait nog een oude versie van de tool. Sluit alle Terminal-vensters van de tool, start Site Tool.command opnieuw en herlaad deze pagina (Cmd+Shift+R).";
     return;
@@ -316,6 +333,23 @@ async function refresh() {
   es.innerHTML = `<option value="">- kies een album -</option>` + state.albums.map(a => `<option value="${a.page}">${escapeHtml(a.title)} (${a.page})</option>`).join("");
   if (ekeep && state.albums.some(a => a.page === ekeep)) es.value = ekeep;
 }
+const progress = {
+  t0: 0,
+  show(title, text) { $("#ptitle").textContent = title; this.t0 = Date.now(); this.set(0, 0, text || ""); $("#prog").hidden = false; },
+  set(done, total, text) {
+    if (text !== undefined) $("#ptext").textContent = text;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    $("#pbar").style.width = (total ? pct : 3) + "%";
+    $("#pcount").textContent = total ? `${done} van ${total} (${pct}%)` : "";
+    let eta = "";
+    if (total && done > 0 && done < total) {
+      const s = Math.round((Date.now() - this.t0) / done * (total - done) / 1000);
+      eta = s > 59 ? `nog ongeveer ${Math.ceil(s / 60)} min` : `nog ongeveer ${Math.max(1, s)} s`;
+    }
+    $("#peta").textContent = eta;
+  },
+  hide() { $("#prog").hidden = true; }
+};
 function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 // ---------- foto's laden (in de browser: draai-info van camera/iPhone wordt correct toegepast) ----------
@@ -367,6 +401,20 @@ function rotated(src, rot) {
   ctx.drawImage(src, -src.width / 2, -src.height / 2);
   return c;
 }
+// klein watermerk linksonder (op een kopie, het origineel blijft onaangeroerd)
+function withWatermark(src) {
+  const text = S().watermark;
+  if (!text) return src;
+  const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+  const ctx = c.getContext("2d"); ctx.drawImage(src, 0, 0);
+  const size = Math.max(11, Math.round(Math.min(c.width, c.height) * 0.018));
+  ctx.font = `600 ${size}px -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif`;
+  ctx.textBaseline = "bottom";
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = Math.round(size * 0.4);
+  ctx.fillStyle = "rgba(255,255,255,.7)";
+  ctx.fillText(text, Math.round(size * 0.9), c.height - Math.round(size * 0.7));
+  return c;
+}
 const toBlob = (c, q) => new Promise(r => c.toBlob(r, "image/jpeg", q));
 // grootste kader met verhouding R (b/h) binnen een beeld met verhouding A, als fracties
 function fitFrame(A, R, zoom) {
@@ -378,6 +426,33 @@ function fitFrame(A, R, zoom) {
 function posOf(f) {   // kader -> CSS object-position
   const px = f.w < 0.999 ? f.x / (1 - f.w) * 100 : 50, py = f.h < 0.999 ? f.y / (1 - f.h) * 100 : 50;
   return `${px.toFixed(1)}% ${py.toFixed(1)}%`;
+}
+
+// ---------- uploaden: volgende foto verkleinen terwijl de vorige nog uploadt ----------
+async function upBlob(blob, name) {
+  const r = await fetch("/api/upload?name=" + encodeURIComponent(name), { method: "POST", body: blob });
+  if (!r.ok) throw new Error("Upload mislukt: " + name);
+  return (await getJSON(r)).id;
+}
+async function processAll(items, makeOne, label) {
+  // makeOne(item) -> { blobs: {key: blob}, extra } ; resultaat: { key: id, ...extra }
+  const results = new Array(items.length), pending = [];
+  let done = 0;
+  for (let i = 0; i < items.length; i++) {
+    progress.set(done, items.length, `${label} ${i + 1} van ${items.length}: ${items[i].name}`);
+    const made = await makeOne(items[i]);
+    await new Promise(r => setTimeout(r, 0));   // scherm laten bijwerken
+    const job = (async () => {
+      const out = Object.assign({}, made.extra || {});
+      for (const k in made.blobs) out[k] = await upBlob(made.blobs[k], items[i].name);
+      results[i] = out; done++;
+      progress.set(done, items.length);
+    })();
+    pending.push(job);
+    if (pending.length >= 3) await pending.shift();
+  }
+  await Promise.all(pending);
+  return results;
 }
 
 // ---------- foto-kiezers ----------
@@ -393,14 +468,21 @@ function picker(dropId, fileId, thumbsId, withCover) {
   };
   const add = async files => {
     const todo = [...files].filter(f => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
+    if (!todo.length) return;
     busy += todo.length; render();
-    for (const f of todo) {
+    progress.show("Foto's inladen", "");
+    const errors = [];
+    for (let k = 0; k < todo.length; k++) {
+      const f = todo[k];
+      progress.set(k, todo.length, f.name);
       try {
         const p = { name: f.name, src: await decode(f), rot: 0 };
         refreshPhoto(p); list.push(p);
-      } catch (e) { alert(e.message); }
-      busy--; render();
+      } catch (e) { errors.push(e.message); }
+      busy--;
     }
+    progress.hide(); render();
+    if (errors.length) alert(errors.join("\n"));
   };
   const render = () => {
     box.innerHTML = "";
@@ -434,28 +516,21 @@ function picker(dropId, fileId, thumbsId, withCover) {
       return p.tile;
     },
     // alles in de juiste maat maken en uploaden
-    async upload(onProgress) {
-      const up = async (blob, name) => {
-        const r = await fetch("/api/upload?name=" + encodeURIComponent(name), { method: "POST", body: blob });
-        if (!r.ok) throw new Error("Upload mislukt: " + name);
-        return (await getJSON(r)).id;
-      };
-      const out = [];
-      for (let i = 0; i < list.length; i++) {
-        onProgress(i + 1, list.length);
-        const p = list[i], r = rotated(p.src, p.rot);
-        const full = await up(await toBlob(r, S().fullQ), p.name);
-        const thumb = await up(await toBlob(scaled(r, S().thumbPx), S().thumbQ), p.name);
-        out.push({ full, thumb, pos: posOf(p.grid) });
-      }
+    async upload() {
+      const out = await processAll(list, async p => {
+        const r = rotated(p.src, p.rot);
+        return { blobs: { full: await toBlob(withWatermark(r), S().fullQ), thumb: await toBlob(scaled(r, S().thumbPx), S().thumbQ) },
+                 extra: { pos: posOf(p.grid) } };
+      }, "Foto verkleinen");
       let tile = null;
       if (withCover) {
+        progress.set(list.length, list.length, "Tegelfoto maken");
         const p = list[cover], r = rotated(p.src, p.rot), f = api.tileFrame();
         const W = S().tileW, H = Math.round(W / f.R);
         const c = document.createElement("canvas"); c.width = W; c.height = H;
         const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
         ctx.drawImage(r, f.x * r.width, f.y * r.height, f.w * r.width, f.h * r.height, 0, 0, W, H);
-        tile = await up(await toBlob(c, 0.85), "tegel.jpg");
+        tile = await upBlob(await toBlob(c, 0.85), "tegel.jpg");
       }
       return { photos: out, tile };
     }
@@ -470,7 +545,10 @@ document.querySelectorAll("input[name=where]").forEach(r => r.addEventListener("
 const ed = { pk: null, i: 0, mode: "grid", img: null, scale: 1 };
 async function openEditor(pk, i) {
   if (pk.ensure) {
-    try { await pk.ensure(i); } catch (e) { alert(e.message); return; }
+    const need = !pk.list[i].src;
+    if (need) progress.show("Foto openen", pk.list[i].name);
+    try { await pk.ensure(i); } catch (e) { progress.hide(); alert(e.message); return; }
+    progress.hide();
   }
   ed.pk = pk; ed.i = i; ed.mode = "grid";
   $("#modal").hidden = false; drawEditor();
@@ -621,38 +699,32 @@ $("#ealbum").onchange = loadAlbum;
 $("#esave").onclick = async () => {
   const btn = $("#esave"), msg = $("#msg4");
   btn.disabled = true;
+  progress.show("Album opslaan", "Voorbereiden...");
   try {
-    const up = async (blob, name) => {
-      const r = await fetch("/api/upload?name=" + encodeURIComponent(name), { method: "POST", body: blob });
-      if (!r.ok) throw new Error("Upload mislukt"); return (await getJSON(r)).id;
-    };
-    const photos = [];
-    for (let i = 0; i < p3.list.length; i++) {
-      const p = p3.list[i];
+    const photos = await processAll(p3.list, async p => {
       const pos = p.grid ? posOf(p.grid) : p.pos;
-      if (p.rot) {   // gedraaid: opnieuw opslaan
-        say(msg, `Gedraaide foto opslaan (${i + 1})...`);
-        const r = rotated(p.src, p.rot);
-        photos.push({ newFull: await up(await toBlob(r, S().fullQ), p.name), newThumb: await up(await toBlob(scaled(r, S().thumbPx), S().thumbQ), p.name), pos });
-      } else photos.push({ full: p.full, thumb: p.thumb, pos });
-    }
+      if (!p.rot) return { blobs: {}, extra: { full: p.full, thumb: p.thumb, pos } };
+      const r = rotated(p.src, p.rot);   // gedraaid: opnieuw opslaan
+      return { blobs: { newFull: await toBlob(withWatermark(r), S().fullQ), newThumb: await toBlob(scaled(r, S().thumbPx), S().thumbQ) }, extra: { pos } };
+    }, "Foto");
     let tile = null;
     if (p3.cover >= 0 && p3.tileChanged) {
+      progress.set(1, 1, "Tegelfoto maken");
       const p = p3.list[p3.cover], r = rotated(p.src, p.rot), f = p3.tileFrame();
       const W = S().tileW, H = Math.round(W / f.R);
       const c = document.createElement("canvas"); c.width = W; c.height = H;
       const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high";
       ctx.drawImage(r, f.x * r.width, f.y * r.height, f.w * r.width, f.h * r.height, 0, 0, W, H);
-      tile = await up(await toBlob(c, 0.85), "tegel.jpg");
+      tile = await upBlob(await toBlob(c, 0.85), "tegel.jpg");
     }
-    say(msg, "Opslaan...");
+    progress.set(1, 1, "Pagina opslaan...");
     const res = await post("/api/album-save", { page: p3.page, title: $("#etitle").value, intro: $("#eintro").value,
       subtitle: p3.withCover ? $("#esub").value : null, photos, tile });
     lastCreated = $("#etitle").value;
     await refresh(); await loadAlbum();
     say(msg, `Opgeslagen (${res.count} foto's). <a href="${siteUrl(res.page)}" target="_blank">Bekijk de pagina</a>`, "ok");
   } catch (e) { say(msg, e.message, "err"); }
-  btn.disabled = false;
+  progress.hide(); btn.disabled = false;
 };
 $("#edelete").onclick = async () => {
   if (!p3.page || !confirm(`Album "${$("#etitle").value}" verwijderen? De pagina, de tegel en het menu-item verdwijnen.`)) return;
@@ -731,9 +803,10 @@ $("#create").onclick = async () => {
   if (!p1.list.length) return say(msg, "Sleep minstens een foto in het vak.", "err");
   if (p1.busy) return say(msg, "Even wachten, de foto's worden nog geladen.", "err");
   btn.disabled = true;
+  progress.show("Album aanmaken", "Voorbereiden...");
   try {
-    const up = await p1.upload((i, n) => say(msg, `Verkleinen en uploaden ${i}/${n}...`));
-    say(msg, "Pagina maken...");
+    const up = await p1.upload();
+    progress.set(1, 1, "Pagina en tegel maken...");
     const res = await post("/api/create", {
       where: document.querySelector("input[name=where]:checked").value,
       position: document.querySelector("input[name=pos]:checked").value,
@@ -746,7 +819,7 @@ $("#create").onclick = async () => {
     lastCreated = title;
     p1.clear(); $("#title").value = $("#subtitle").value = $("#intro").value = "";
   } catch (e) { say(msg, e.message, "err"); }
-  btn.disabled = false; refresh();
+  progress.hide(); btn.disabled = false; refresh();
 };
 
 // ---------- foto's toevoegen ----------
@@ -755,8 +828,10 @@ $("#add").onclick = async () => {
   if (!p2.list.length) return say(msg, "Sleep minstens een foto in het vak.", "err");
   if (p2.busy) return say(msg, "Even wachten, de foto's worden nog geladen.", "err");
   btn.disabled = true;
+  progress.show("Foto's toevoegen", "Voorbereiden...");
   try {
-    const up = await p2.upload((i, n) => say(msg, `Verkleinen en uploaden ${i}/${n}...`));
+    const up = await p2.upload();
+    progress.set(1, 1, "Album bijwerken...");
     const res = await post("/api/add", { page: $("#album").value, photos: up.photos });
     let t = `Klaar: ${res.count} foto's toegevoegd aan <a href="/site/${res.page}" target="_blank">${res.page}</a>.`;
     if (res.errors.length) t += `<br><span style="color:#e60000">Niet gelukt: ${res.errors.map(escapeHtml).join("; ")}</span>`;
@@ -764,19 +839,21 @@ $("#add").onclick = async () => {
     lastCreated = $("#album").selectedOptions[0].textContent.replace(/ \(\d+ foto's\)$/, "");
     p2.clear();
   } catch (e) { say(msg, e.message, "err"); }
-  btn.disabled = false; refresh();
+  progress.hide(); btn.disabled = false; refresh();
 };
 
 // ---------- publiceren ----------
 $("#publish").onclick = async () => {
   const btn = $("#publish"), msg = $("#msg3"), log = $("#log");
-  btn.disabled = true; say(msg, "Bezig met publiceren...");
+  btn.disabled = true; say(msg, "");
+  progress.show("Publiceren naar GitHub", "Wijzigingen versturen... dit kan bij veel foto's even duren.");
   try {
     const res = await post("/api/publish", { message: $("#cmsg").value || (lastCreated ? `Update: ${lastCreated}` : "Site bijgewerkt") });
     log.hidden = false; log.textContent = res.log;
     say(msg, res.ok ? "Gepubliceerd." : "Niet gelukt, zie het verslag hieronder.", res.ok ? "ok" : "err");
     if (res.ok) $("#cmsg").value = "";
   } catch (e) { say(msg, e.message, "err"); }
+  progress.hide();
   btn.disabled = false; refresh();
 };
 

@@ -40,7 +40,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(TOOL_DIR)          # de map van de website (1 niveau hoger)
 PORT = 8765
-VERSION = 3
+VERSION = 4
 
 FULL_PX, FULL_Q = 2000, 0.85    # grote foto (lightbox): langste zijde, JPEG-kwaliteit
 THUMB_PX, THUMB_Q = 700, 0.8    # kleine foto in het raster
@@ -603,6 +603,54 @@ def action_album_delete(d):
     return {"ok": True, "page": page_rel, "images": removed_imgs}
 
 
+# ---------- volgorde van de tegels ----------
+TILE_PAGES = {"fotografie": "Fotografie.html", "home": "index.html"}
+ARTICLE_RE = re.compile(r"^[ \t]*<article .*</article>[ \t]*$")
+
+
+def tile_block(page_rel):
+    text = read(page_rel)
+    a = text.find(M_TILES_BEGIN)
+    b = text.find(M_TILES_END)
+    if a < 0 or b < 0:
+        raise ValueError("Markeringen voor de tegels niet gevonden in " + page_rel)
+    a = text.find("\n", a) + 1
+    b = text.rfind("\n", 0, b) + 1
+    return text, a, b
+
+
+def action_tiles_get(which):
+    page_rel = TILE_PAGES.get(which)
+    if not page_rel:
+        raise ValueError("Onbekende pagina.")
+    text, a, b = tile_block(page_rel)
+    tiles = []
+    for line in text[a:b].splitlines():
+        if ARTICLE_RE.match(line):
+            img = re.search(r'<img src="([^"]*)"', line)
+            href = re.search(r'<a href="([^"]*)"', line)
+            title = re.search(r"<h2>(.*?)</h2>", line)
+            tiles.append({"img": html.unescape(img.group(1)) if img else "",
+                          "href": html.unescape(href.group(1)) if href else "",
+                          "title": html.unescape(title.group(1)) if title else "?"})
+    return {"page": page_rel, "tiles": tiles}
+
+
+def action_tiles_save(d):
+    page_rel = TILE_PAGES.get(d.get("which"))
+    if not page_rel:
+        raise ValueError("Onbekende pagina.")
+    text, a, b = tile_block(page_rel)
+    lines = [l for l in text[a:b].splitlines() if l.strip()]
+    if not all(ARTICLE_RE.match(l) for l in lines):
+        raise ValueError("Er staat iets anders dan tegels tussen de markeringen; pas dit met de hand aan.")
+    order = d.get("order") or []
+    if sorted(order) != list(range(len(lines))):
+        raise ValueError("De pagina is intussen gewijzigd. Herlaad en probeer opnieuw.")
+    write(page_rel, text[:a] + "".join(lines[i] + "\n" for i in order) + text[b:])
+    return {"ok": True, "page": page_rel}
+
+
 def git(*args):
     r = subprocess.run(["git", "-C", REPO] + list(args), capture_output=True, text=True)
     return r.returncode, (r.stdout + r.stderr).strip()
@@ -688,6 +736,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, f.read(), "text/html; charset=utf-8")
         if url.path == "/api/state":
             return self.send(200, action_state())
+        if url.path == "/api/tiles":
+            try:
+                return self.send(200, action_tiles_get(parse_qs(url.query).get("which", [""])[0]))
+            except Exception as e:  # noqa
+                return self.send(400, {"error": str(e)})
         if url.path == "/api/album":
             try:
                 return self.send(200, action_album_get(parse_qs(url.query).get("page", [""])[0]))
@@ -744,6 +797,8 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200, action_add(data))
                 if url.path == "/api/album-save":
                     return self.send(200, action_album_save(data))
+                if url.path == "/api/tiles-save":
+                    return self.send(200, action_tiles_save(data))
                 if url.path == "/api/album-delete":
                     return self.send(200, action_album_delete(data))
                 if url.path == "/api/publish":

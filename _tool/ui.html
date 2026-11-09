@@ -58,6 +58,15 @@
   .thumb .mv { position: absolute; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-weight: 700; cursor: pointer; line-height: 22px; padding: 0; }
   .thumb .mv.l { left: 4px; } .thumb .mv.r { right: 4px; }
   .thumb.dirty::before { content: "AANGEPAST"; position: absolute; top: 4px; left: 4px; background: #111; color: #fff; font-size: 10px; font-weight: 900; letter-spacing: .08em; padding: 2px 6px; border-radius: 3px; z-index: 1; }
+  .tiles-order { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 16px; }
+  .tcard { position: relative; border-radius: 6px; overflow: hidden; background: #ddd; cursor: grab; aspect-ratio: 1.08; }
+  .tcard img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  .tcard .tt { position: absolute; inset: auto 0 0 0; padding: 26px 10px 8px; color: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; font-size: 13px; background: linear-gradient(transparent, rgba(0,0,0,.75)); }
+  .tcard .nr { position: absolute; top: 6px; left: 6px; background: #111; color: #fff; font-size: 11px; font-weight: 900; padding: 2px 7px; border-radius: 3px; }
+  .tcard .mv { position: absolute; top: 6px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.7); color: #fff; font-weight: 700; cursor: pointer; padding: 0; }
+  .tcard .mv.l { right: 38px; } .tcard .mv.r { right: 6px; }
+  .tcard.drag { opacity: .35; }
+  .tcard.over { outline: 3px solid var(--red); }
   .thumb .rot { position: absolute; bottom: 4px; right: 4px; font-size: 10px; color: #fff; }
   .hint { font-size: 12px; color: var(--mute); margin-top: 8px; }
   #modal { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 50; }
@@ -92,6 +101,7 @@
   <button data-tab="nieuw" class="on">Nieuw album / tegel</button>
   <button data-tab="toevoegen">Foto's toevoegen</button>
   <button data-tab="bewerken">Album bewerken</button>
+  <button data-tab="volgorde">Volgorde</button>
   <button data-tab="publiceren">Publiceren <span class="badge" id="badge" hidden>0</span></button>
 </nav>
 
@@ -196,6 +206,23 @@
     </div>
   </section>
 
+  <!-- VOLGORDE -->
+  <section class="pane" id="pane-volgorde">
+    <div class="card">
+      <h2>Volgorde van de tegels</h2>
+      <p class="help">Sleep de tegels naar de juiste plek, of gebruik de pijltjes. Klik daarna op Volgorde opslaan.</p>
+      <div class="seg">
+        <label><input type="radio" name="tw" value="fotografie" checked><span>Fotografie-pagina</span></label>
+        <label><input type="radio" name="tw" value="home"><span>Homepagina</span></label>
+      </div>
+      <div class="tiles-order" id="tilesOrder"></div>
+      <div class="bar">
+        <button class="go" id="tsave">Volgorde opslaan</button>
+        <span class="msg" id="msg6"></span>
+      </div>
+    </div>
+  </section>
+
   <!-- PUBLICEREN -->
   <section class="pane" id="pane-publiceren">
     <div class="card">
@@ -269,7 +296,7 @@ async function refresh() {
     : `map <b>${state.repo}</b> &middot; <span style="color:#e60000">geen git-repository gevonden</span>`;
   $("#status").innerHTML = s;
   const w = $("#warn");
-  if (state.version !== 3) {
+  if (state.version !== 4) {
     w.hidden = false;
     w.textContent = "Er draait nog een oude versie van de tool. Sluit alle Terminal-vensters van de tool, start Site Tool.command opnieuw en herlaad deze pagina (Cmd+Shift+R).";
     return;
@@ -636,6 +663,57 @@ $("#edelete").onclick = async () => {
     say($("#msg5"), `Verwijderd: ${res.page}.` + (res.images ? " De fotomap is ook verwijderd." : " Je originele fotomap is blijven staan."), "ok");
   } catch (e) { say($("#msg4"), e.message, "err"); }
 };
+
+// ---------- volgorde van de tegels ----------
+const tord = { which: "fotografie", tiles: [], order: [] };
+async function loadTiles() {
+  tord.which = document.querySelector("input[name=tw]:checked").value;
+  say($("#msg6"), "");
+  try {
+    const d = await getJSON(await fetch("/api/tiles?which=" + tord.which));
+    if (d.error) throw new Error(d.error);
+    tord.tiles = d.tiles; tord.order = d.tiles.map((_, i) => i); renderTiles();
+  } catch (e) { say($("#msg6"), e.message, "err"); }
+}
+function renderTiles() {
+  const box = $("#tilesOrder"); box.innerHTML = "";
+  let dragFrom = null;
+  tord.order.forEach((ti, pos) => {
+    const t = tord.tiles[ti], d = document.createElement("div");
+    d.className = "tcard"; d.draggable = true;
+    d.innerHTML = `<img src="${t.img ? siteUrl(t.img) : ""}" alt=""><span class="nr">${pos + 1}</span>
+      <button class="mv l" title="Naar voren">&larr;</button><button class="mv r" title="Naar achteren">&rarr;</button>
+      <div class="tt">${escapeHtml(t.title)}</div>`;
+    const move = (from, to) => {
+      if (to < 0 || to >= tord.order.length || from === to) return;
+      const [x] = tord.order.splice(from, 1); tord.order.splice(to, 0, x); renderTiles();
+      say($("#msg6"), "Nog niet opgeslagen.", "");
+    };
+    d.querySelector(".mv.l").onclick = () => move(pos, pos - 1);
+    d.querySelector(".mv.r").onclick = () => move(pos, pos + 1);
+    d.addEventListener("dragstart", e => { dragFrom = pos; d.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", pos); });
+    d.addEventListener("dragend", () => d.classList.remove("drag"));
+    d.addEventListener("dragover", e => { e.preventDefault(); d.classList.add("over"); });
+    d.addEventListener("dragleave", () => d.classList.remove("over"));
+    d.addEventListener("drop", e => {
+      e.preventDefault(); d.classList.remove("over");
+      const from = dragFrom !== null ? dragFrom : +e.dataTransfer.getData("text/plain");
+      move(from, pos);
+    });
+    box.appendChild(d);
+  });
+}
+document.querySelectorAll("input[name=tw]").forEach(r => r.onchange = loadTiles);
+$("#tsave").onclick = async () => {
+  const btn = $("#tsave"); btn.disabled = true;
+  try {
+    const res = await post("/api/tiles-save", { which: tord.which, order: tord.order });
+    await loadTiles(); refresh();
+    say($("#msg6"), `Opgeslagen. <a href="${siteUrl(res.page)}" target="_blank">Bekijk de pagina</a>`, "ok");
+  } catch (e) { say($("#msg6"), e.message, "err"); }
+  btn.disabled = false;
+};
+document.querySelector('nav.tabs button[data-tab=volgorde]').addEventListener("click", loadTiles);
 
 async function post(url, data) {
   const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
